@@ -1,0 +1,105 @@
+######################################################################################
+#  Description
+######################################################################################
+
+Description: >
+    This is a simple hello world example - Autoscaling removed - caused problems
+
+######################################################################################
+#  Parameters
+######################################################################################
+
+Parameters: 
+
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: ungerwLBListTG
+
+    ParentVPCStack:
+        Description: Please enter the Parent VPC Stack (do not change)
+        Type: String
+        Default: UngerwVPC
+
+    ParentECSStack:
+        Description: Please enter the Parent ECS Stack (do not change)
+        Type: String
+        Default: UngerwECS
+
+######################################################################################
+#  Resources
+######################################################################################
+
+Resources:
+
+    ######################################################################################
+    #  Loadbalancing
+    ######################################################################################
+
+    LoadBalancer:
+        Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+        Properties:
+            Name: !Sub LB-${AWS::StackName}
+            Type: application
+            Scheme: internet-facing
+            Subnets: !Split
+              - ','
+              - 'Fn::ImportValue':
+                    !Sub '${ParentVPCStack}-PublicSubnets' # <- Change for private or public services
+            SecurityGroups: 
+                - 'Fn::ImportValue': !Sub '${ParentECSStack}-LoadBalancerSecurityGroup'
+            Tags: 
+                - Key: Name
+                  Value: !Sub LB-${AWS::StackName}
+
+    LoadBalancerListener:
+        Type: AWS::ElasticLoadBalancingV2::Listener
+        Properties:
+            LoadBalancerArn: !Ref LoadBalancer
+            Port: 80
+            Protocol: HTTP 
+            DefaultActions: 
+                - Type: forward
+                  TargetGroupArn: !Ref TargetGroup
+
+    TargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties:
+            Name: !Sub TG-${AWS::StackName}
+            VpcId:
+                'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+            Port: 80
+            Protocol: HTTP
+            Matcher: 
+                HttpCode: 200-299
+            HealthCheckIntervalSeconds: 10
+            HealthCheckPath: /
+            HealthCheckProtocol: HTTP
+            HealthCheckTimeoutSeconds: 5
+            HealthyThresholdCount: 2
+            #TargetType: ip
+    
+#####################################################################################
+#  Outputs
+######################################################################################
+
+Outputs:
+
+    LoadBalancer:
+        Description: A reference to the Application Load Balancer
+        Value: !Ref LoadBalancer
+        Export:
+            Name: !Sub LB-${AWS::StackName}
+
+    LoadBalancerUrl:
+        Description: The URL of the ALB
+        Value: !GetAtt LoadBalancer.DNSName
+        Export:
+            Name: !Sub LB-URL-${AWS::StackName}
+
+    Listener:
+        Description: A reference to a port 80 listener
+        Value: !Ref LoadBalancerListener  
+        Export:
+            Name: !Sub LB-Listener-${AWS::StackName}
+    

@@ -1,0 +1,40 @@
+Description: >
+    Task definition spring boot example
+
+# by wolfgang unger 4.2018
+
+Parameters: 
+
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: UngerwSpringBootTD
+        
+        
+Resources:
+
+    TaskDefinition:
+        Type: AWS::ECS::TaskDefinition
+        Properties:
+            Family:  !Ref AWS::StackName
+            NetworkMode: bridge
+            ContainerDefinitions:
+                - Name: !Ref AWS::StackName
+                  Essential: true
+                  Image: 016973021151.dkr.ecr.eu-west-3.amazonaws.com/ecs-repository:spring-boot
+                  Memory: 128
+                  PortMappings:
+                    - ContainerPort: 8080
+                  LogConfiguration:
+                    LogDriver: awslogs
+                    Options:
+                        awslogs-group: !Ref AWS::StackName
+                        awslogs-region: !Ref AWS::Region
+    
+    CloudWatchLogsGroup:
+        Type: AWS::Logs::LogGroup
+        Properties: 
+            LogGroupName: !Ref AWS::StackName
+            RetentionInDays: 365  
+
+ 

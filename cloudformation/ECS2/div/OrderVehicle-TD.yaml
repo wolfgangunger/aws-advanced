@@ -1,0 +1,59 @@
+######################################################################################
+#  Description
+######################################################################################
+
+Description: >
+    printing press task definition - bridge network mode
+    
+# by wolfgang unger 4.2018
+######################################################################################
+#  Parameters
+######################################################################################
+Parameters: 
+
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: OrderVehicle-TD
+
+######################################################################################
+#  Resources
+######################################################################################
+
+Resources:
+
+    TaskDefinition:
+        Type: AWS::ECS::TaskDefinition
+        Properties:
+            Family: man-ms-ordervehiclesrv
+            #NetworkMode: awsvpc
+            NetworkMode: bridge
+            # ExecutionRoleArn: todo # Role of ECS Cluster for excuting the services
+            # TaskRoleArn: todo # Role for granting access for services like S3, DynamoDB...
+            ContainerDefinitions:
+                - Name: man-ms-ordervehiclesrv
+                  Essential: true
+                  Image: 431271371214.dkr.ecr.eu-central-1.amazonaws.com/ecs-repository:man-ms-orderVehicleConfigurationHandler-ws_0.0.1-SNAPSHOT
+                  Memory: 800
+                  Environment:
+                    - Name: SPRING_PROFILES_ACTIVE
+                      Value: cloudint
+                    - Name: man_ms_port
+                      Value: 8188
+                    - Name: man_ms_vgarage_baseUrl
+                      Value: localhost
+                  PortMappings:
+                    - ContainerPort: 8188
+                      HostPort: 8188
+                      Protocol: tcp
+                  LogConfiguration:
+                    LogDriver: awslogs
+                    Options:
+                        awslogs-group: !Ref AWS::StackName
+                        awslogs-region: !Ref AWS::Region
+
+    CloudWatchLogsGroup:
+        Type: AWS::Logs::LogGroup
+        Properties: 
+            LogGroupName: !Ref AWS::StackName
+            RetentionInDays: 1 

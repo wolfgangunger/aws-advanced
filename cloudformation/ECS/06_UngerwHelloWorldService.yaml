@@ -1,0 +1,81 @@
+######################################################################################
+#  Description
+######################################################################################
+
+Description: >
+    This is a simple hello world ecs service example 
+# by wolfgang unger 3.2018
+######################################################################################
+#  Parameters
+######################################################################################
+
+Parameters: 
+
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: ungerwHelloWorld-Service 
+
+    ParentVPCStack:
+        Description: Please enter the Parent VPC Stack (do not change)
+        Type: String
+        Default: UngerwVPC
+
+    ParentECSStack:
+        Description: Please enter the Parent ECS Stack (do not change)
+        Type: String
+        Default: UngerwECS
+
+    TaskDefinition:
+        Description: Please enter the name of the task definition
+        Type: String
+        Default: ungerwHelloWorld-td-bridge
+        
+######################################################################################
+#  Resources
+######################################################################################
+
+Resources:
+    Service: 
+        Type: AWS::ECS::Service
+        Properties: 
+            Cluster: UngerwECS
+            Role: !Ref ServiceRole
+            #Role: ungerwECSServiceRole
+                #'Fn::ImportValue': !Sub '${ungerwECSServiceRole}'
+            DesiredCount: 1
+            TaskDefinition:  !Sub '${TaskDefinition}'
+            LoadBalancers: 
+                - ContainerName:  !Sub '${TaskDefinition}'
+                  ContainerPort: 80
+                  TargetGroupArn: arn:aws:elasticloadbalancing:eu-west-1:016973021151:loadbalancer/app/LB-ungerwLBListTG/8a502ea7bbc7afb3
+                  #TargetGroupArn: arn:aws:elasticloadbalancing:eu-west-2:016973021151:targetgroup/TG-ungerwLNetworkBListTG/65275c61154f4dee
+                  
+    ServiceRole:
+     Type: 'AWS::IAM::Role'
+     Properties:
+      RoleName: !Sub '${EnvironmentName}-Role'
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: AmazonEC2ContainerServiceRole
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:AuthorizeSecurityGroupIngress'
+                  - 'ec2:Describe*'
+                  - 'elasticloadbalancing:DeregisterInstancesFromLoadBalancer'
+                  - 'elasticloadbalancing:DeregisterTargets'
+                  - 'elasticloadbalancing:Describe*'
+                  - 'elasticloadbalancing:RegisterInstancesWithLoadBalancer'
+                  - 'elasticloadbalancing:RegisterTargets'
+                Resource: '*'   
+                  

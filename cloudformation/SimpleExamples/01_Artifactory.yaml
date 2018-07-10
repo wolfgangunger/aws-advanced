@@ -1,0 +1,434 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Artifactory by Wolfgang Unger'
+# see machine images :
+# https://bitnami.com/stack/artifactory/cloud/aws
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+      - ParentSSHBastionStack
+      - ParentAuthProxyStack
+      - ParentAlertStack
+      - ParentZoneStack
+    - Label:
+        default: 'Parameters'
+    - Label:
+        default: 'EC2 Parameters'
+      Parameters:
+      - KeyName
+      - IAMUserSSHAccess
+      - SubDomainName
+    - Label:
+        default: 'Master Parameters'
+      Parameters:
+      - MasterSubnetsReach
+      - MasterELBScheme
+      - MasterInstanceType
+      - MasterLogsRetentionInDays
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+    Default: UngerwVPC
+  ParentSSHBastionStack:
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Type: String
+    Default: UngerwSSHBastion
+  ParentAuthProxyStack:
+    Description: 'Optional stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
+    Type: String
+    Default: ''
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: UngerwAlerting
+  ParentZoneStack:
+    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
+    Type: String
+    Default: ''
+  KeyName:
+    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the Artifactory.'
+    Type: String
+    Default: ''
+  IAMUserSSHAccess:
+    Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
+    Type: String
+    Default: false
+    AllowedValues:
+    - true
+    - false
+  MasterSubnetsReach:
+    Description: 'Should the master have direct access to the Internet or do you prefer private subnets with NAT?'
+    Type: String
+    Default: Public
+    AllowedValues:
+    - Public
+    - Private
+  MasterELBScheme:
+    Description: 'Indicates whether the load balancer in front of the Artifactory is internet-facing or internal.'
+    Type: String
+    Default: 'internet-facing'
+    AllowedValues:
+    - 'internet-facing'
+    - internal
+  MasterInstanceType:
+    Description: 'The instance type of the Artifactory.'
+    Type: String
+    Default: 't2.micro'
+  MasterLogsRetentionInDays:
+    Description: 'Specifies the number of days you want to retain log events in the specified log group.'
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  MasterVolumeSize:
+    Description: 'The root volume size, in Gibibytes (GiB). Keep in mind that Artifactory home lives on EFS.'
+    Type: Number
+    Default: 8
+    ConstraintDescription: 'Must be in the range [8-1024]'
+    MinValue: 8
+    MaxValue: 1024
+  SubDomainName:
+    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
+    Type: String
+    Default: 'artifactory'
+Mappings:
+  RegionMap:
+    'ap-south-1':
+      AMI: 'ami-531a4c3c'
+    'eu-west-3':
+      AMI: 'ami-8ee056f3'
+    'eu-west-2':
+      AMI: 'ami-403e2524'
+    'eu-west-1':
+      AMI: 'ami-d834aba1'
+    'ap-northeast-2':
+      AMI: 'ami-863090e8'
+    'ap-northeast-1':
+      AMI: 'ami-ceafcba8'
+    'sa-east-1':
+      AMI: 'ami-84175ae8'
+    'ca-central-1':
+      AMI: 'ami-a954d1cd'
+    'ap-southeast-1':
+      AMI: 'ami-68097514'
+    'ap-southeast-2':
+      AMI: 'ami-942dd1f6'
+    'eu-central-1':
+      AMI: 'ami-5652ce39'
+    'us-east-1':
+      AMI: 'ami-97785bed'
+    'us-east-2':
+      AMI: 'ami-f63b1193'
+    'us-west-1':
+      AMI: 'ami-824c4ee2'
+    'us-west-2':
+      AMI: 'ami-f2d3638a'
+Conditions:
+  HasKeyName: !Not [!Equals [!Ref KeyName, '']]
+  HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
+  HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
+  HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
+  HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
+  HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
+  HasMasterELBSchemeInternal: !Equals [!Ref MasterELBScheme, 'internal']
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  
+Resources:
+  MasterStorageSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'artifactory'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      SecurityGroupIngress:
+      - SourceSecurityGroupId: !Ref MasterSG
+        FromPort: 2049
+        ToPort: 2049
+        IpProtocol: tcp
+  MasterStorage:
+    Type: 'AWS::EFS::FileSystem'
+    Properties:
+      FileSystemTags:
+      - Key: Name
+        Value: 'artifactory-master-storage'
+      PerformanceMode: generalPurpose
+ 
+  MasterStorageMountTargetA:
+    Type: 'AWS::EFS::MountTarget'
+    Properties:
+      FileSystemId: !Ref MasterStorage
+      SecurityGroups:
+      - !Ref MasterStorageSG
+      SubnetId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-${MasterSubnetsReach}Subnet1'
+  MasterStorageMountTargetB:
+    Type: 'AWS::EFS::MountTarget'
+    Properties:
+      FileSystemId: !Ref MasterStorage
+      SecurityGroups:
+      - !Ref MasterStorageSG
+      SubnetId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-${MasterSubnetsReach}Subnet2'
+  MasterELBSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'artifactory-elb-master'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+  MasterELBSGInWorld:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotAuthProxySecurityGroup
+    Properties:
+      GroupId: !Ref MasterELBSG
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      CidrIp: '0.0.0.0/0'
+  MasterELBSGInAuthProxy:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasAuthProxySecurityGroup
+    Properties:
+      GroupId: !Ref MasterELBSG
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      SourceSecurityGroupId:
+      # TODO
+        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+        #'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'
+        #'Fn::ImportValue': UngerwECS-LoadBalancerSecurityGroup
+
+
+  MasterELB:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Scheme: !Ref MasterELBScheme
+      SecurityGroups:
+      - !Ref MasterELBSG
+      Subnets: !If
+      - HasMasterELBSchemeInternal
+      - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-PrivateSubnet1'
+        - 'Fn::ImportValue': !Sub '${ParentVPCStack}-PrivateSubnet2'
+      - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-PublicSubnet1'
+        - 'Fn::ImportValue': !Sub '${ParentVPCStack}-PublicSubnet2'
+      Tags:
+      - Key: Name
+        Value: 'artifactory'
+  MasterELBTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: '/login'
+      HealthCheckPort: 8080
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 25
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      Matcher:
+        HttpCode: '200-299'
+      Port: 8080
+      Protocol: HTTP
+      Tags:
+      - Key: Name
+        Value: 'artifactory'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      TargetGroupAttributes:
+      - Key: 'deregistration_delay.timeout_seconds'
+        Value: 30
+  MasterELBListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+      - TargetGroupArn: !Ref MasterELBTargetGroup
+        Type: forward
+      LoadBalancerArn: !Ref MasterELB
+      Port: 80
+      Protocol: HTTP
+  MasterIP:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: '/'
+      Roles:
+      - !Ref MasterIAMRole
+  MasterIAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - 'ec2.amazonaws.com'
+          Action:
+          - 'sts:AssumeRole'
+      Path: '/'
+      Policies:
+      - PolicyName: logs
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogGroup'
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            - 'logs:DescribeLogStreams'
+            Resource:
+            - 'arn:aws:logs:*:*:*'
+      - PolicyName: sts
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'sts:AssumeRole'
+            Resource:
+            - '*'
+  MasterIAMPolicySSHAccess:
+    Type: 'AWS::IAM::Policy'
+    Condition: HasIAMUserSSHAccess
+    Properties:
+      Roles:
+      - !Ref MasterIAMRole
+      PolicyName: iam
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - 'iam:ListUsers'
+          Resource:
+          - '*'
+        - Effect: Allow
+          Action:
+          - 'iam:ListSSHPublicKeys'
+          - 'iam:GetSSHPublicKey'
+          Resource:
+          - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
+  MasterSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'artifactory'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      SecurityGroupIngress:
+      - SourceSecurityGroupId: !Ref MasterELBSG
+        FromPort: 8080
+        ToPort: 8080
+        IpProtocol: tcp
+  MasterSGInSSHBastion:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref MasterSG
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      SourceSecurityGroupId:
+        # TODO
+        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+        #'Fn::ImportValue': UngerwECS-LoadBalancerSecurityGroup
+  MasterSGInSSHWorld:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref MasterSG
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: '0.0.0.0/0'
+  MasterLogs:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      RetentionInDays: !Ref MasterLogsRetentionInDays
+  MasterLC:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+    Properties:
+      # frankfurt : ami-088e93053e6e16e84 
+      #ImageId: ami-0dfe396c458d2ffe5
+      #ImageId: ami-00c3f3ece55d5e7c4
+      ImageId: ami-0139299cc48861443
+      #irland : ami-0139299cc48861443
+      InstanceType: !Ref MasterInstanceType
+      SecurityGroups:
+     #TODO
+     #- SecurityGroup
+       #- 'Fn::ImportValue': UngerwECS-LoadBalancerSecurityGroup
+       - 'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+      SpotPrice: 10
+ 
+  MasterASG:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    DependsOn:
+    - MasterStorageMountTargetA
+    - MasterStorageMountTargetB
+    Properties:
+      LaunchConfigurationName: !Ref MasterLC
+      MinSize: 1
+      MaxSize: 1
+      DesiredCapacity: 1
+      HealthCheckGracePeriod: 900
+      HealthCheckType: ELB
+      NotificationConfigurations: !If
+      - HasAlertTopic
+      - - NotificationTypes:
+          - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
+          - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
+          TopicARN:
+            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - !Ref 'AWS::NoValue'
+      VPCZoneIdentifier:
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-${MasterSubnetsReach}Subnet1'
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-${MasterSubnetsReach}Subnet2'
+      TargetGroupARNs:
+      - !Ref MasterELBTargetGroup
+      Tags:
+      - Key: Name
+        Value: 'artifactory'
+        PropagateAtLaunch: true
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        PauseTime: PT15M
+        SuspendProcesses:
+        - HealthCheck
+        - ReplaceUnhealthy
+        - AZRebalance
+        - AlarmNotification
+        - ScheduledActions
+        WaitOnResourceSignals: true
+ 
+Outputs:
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
+  AdminUsername:
+    Description: 'User name for the Artifactory .'
+    Value: admin
+    Export:
+      Name: !Sub '${AWS::StackName}-AdminUsername'
+  DNSName:
+    Description: 'The DNS name for the Artifactory load balancer.'
+    Value: !GetAtt 'MasterELB.DNSName'
+    Export:
+      Name: !Sub '${AWS::StackName}-DNSName'
+  URL:
+    Description: 'URL to the Artifactory.'
+    Value: !Sub 'http://${MasterELB.DNSName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-URL'
+  MasterIAMRole:
+    Description: 'Use this IAm Role to reference API calls from the Artifactory'
+    Value: !GetAtt 'MasterIAMRole.Arn'
+    Export:
+      Name: !Sub '${AWS::StackName}-MasterIAMRole'

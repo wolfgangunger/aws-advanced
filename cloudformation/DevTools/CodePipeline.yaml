@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: 2010-09-09
+# created by wolfgang unger - 4.2018
+
+Parameters:
+
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+
+    CodePipelineServiceRole:
+        Type:   Type: AWS::IAM::Role
+        Description: Name of the Service Role for the Pipeline
+
+Resources:
+ AppPipeline: 
+  Type: "AWS::CodePipeline::Pipeline"
+  Properties: 
+    RoleArn: 
+      Ref: CodePipelineServiceRole
+    Stages: 
+      - 
+        Name: Source
+        Actions: 
+          - 
+            Name: SourceAction
+            ActionTypeId: 
+              Category: Source
+              Owner: AWS
+              Version: 1
+              Provider: S3
+            OutputArtifacts: 
+              - 
+                Name: SourceOutput
+            Configuration: 
+              S3Bucket: 
+                Ref: SourceS3Bucket
+              S3ObjectKey: 
+                Ref: SourceS3ObjectKey
+            RunOrder: 1
+      - 
+        Name: Beta
+        Actions: 
+          - 
+            Name: BetaAction
+            InputArtifacts: 
+              - 
+                Name: SourceOutput
+            ActionTypeId: 
+              Category: Deploy
+              Owner: AWS
+              Version: 1
+              Provider: CodeDeploy
+            Configuration: 
+              ApplicationName: 
+                Ref: ApplicationName
+              DeploymentGroupName: 
+                Ref: DeploymentGroupName
+            RunOrder: 1
+      - 
+        Name: Release
+        Actions: 
+          - 
+            Name: ReleaseAction
+            InputArtifacts: 
+              - 
+                Name: SourceOutput
+            ActionTypeId: 
+              Category: Deploy
+              Owner: AWS
+              Version: 1
+              Provider: CodeDeploy
+            Configuration: 
+              ApplicationName: 
+                Ref: ApplicationName
+              DeploymentGroupName: 
+                Ref: DeploymentGroupName
+            RunOrder: 1
+    ArtifactStore: 
+      Type: S3
+      Location: 
+        Ref: ArtifactStoreS3Location
+    DisableInboundStageTransitions: 
+      - 
+        StageName: Release
+        Reason: "Disabling the transition until integration tests are completed"

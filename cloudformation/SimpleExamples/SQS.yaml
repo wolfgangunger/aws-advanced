@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+    SQS Queue for printing press 
+# created by wolfgang unger - 6.2018
+
+Resources:
+  MyQueue:
+   Type: AWS::SQS::Queue
+   Properties:
+    QueueName: "ppQueue1"
+    VisibilityTimeout: 30
+    DelaySeconds: 1
+    KmsMasterKeyId: arn:aws:kms:eu-central-1:431271371214:key/d92106ea-9638-44a2-9ac6-8657cc6adb57
+    #KmsDataKeyReusePeriodSeconds: Integer
+    #MaximumMessageSize: Integer
+    #MessageRetentionPeriod: Integer
+
+
+
+

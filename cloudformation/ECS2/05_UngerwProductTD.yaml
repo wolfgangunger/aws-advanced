@@ -1,0 +1,39 @@
+Description: >
+    Task definition product service
+
+# by wolfgang unger 4.2018
+
+Parameters: 
+
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: UngerwProductTD
+        
+Resources:
+
+    TaskDefinition:
+        Type: AWS::ECS::TaskDefinition
+        Properties:
+            Family:  !Ref AWS::StackName
+            NetworkMode: bridge
+            ContainerDefinitions:
+                - Name: !Ref AWS::StackName
+                  Essential: true
+                  Image: 275396840892.dkr.ecr.us-east-1.amazonaws.com/ecs-refarch-cloudformation/product-service:1.0.0
+                  Memory: 128
+                  PortMappings:
+                    - ContainerPort: 8001
+                  LogConfiguration:
+                    LogDriver: awslogs
+                    Options:
+                        awslogs-group: !Ref AWS::StackName
+                        awslogs-region: !Ref AWS::Region
+    
+    CloudWatchLogsGroup:
+        Type: AWS::Logs::LogGroup
+        Properties: 
+            LogGroupName: !Ref AWS::StackName
+            RetentionInDays: 365  
+
+ 

@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: 2010-09-09
+# created by wolfgang unger - 3.2018
+
+Resources:
+  JenkinsUser:
+    Type: 'AWS::IAM::User'
+    Properties:
+        UserName: Jenkins    
+        Path: "/"
+        LoginProfile:
+            Password: jenkins12345        
+        #Groups:
+        #    - String
+        #LoginProfile:
+        #    LoginProfile Type
+        #ManagedPolicyArns:
+        #    - String
+        Policies:
+            - PolicyName: AmazonSSMFullAccess
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                  - Effect: Allow
+                    Action:
+                        - 'cloudwatch:PutMetricData'
+                        - 'ds:CreateComputer'
+                        - 'ds:DescribeDirectories'
+                        - 'ec2:DescribeInstanceStatus'
+                        - 'logs:*'
+                        - 'ssm:*'
+                        - 'ec2messages:*'
+                    Resource: '*'
+
+
+
+
+
+

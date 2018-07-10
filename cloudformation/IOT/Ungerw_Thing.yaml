@@ -1,0 +1,22 @@
+######################################################################################
+#  Description
+######################################################################################
+
+Description: >
+    This is a simple IOT thing example
+#by wolfgang unger 4.2018
+
+Parameters: 
+
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: TheThing
+
+Resources:
+    Thing:
+        Type: "AWS::IoT::Thing"
+        Properties:
+            ThingName: DasDing
+            #AttributePayload:
+            #    Key1: Value1

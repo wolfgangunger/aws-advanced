@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: 2010-09-09
+# created by wolfgang unger - 4.2018
+
+Parameters:
+
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: CodeBuild
+
+    CodeBuildRole:
+        Description: Name of the Service Role for the Pipeline
+        #Type:  AWS::IAM::Role
+        Type: String
+        Default: CodeBuildRole-CodeBuildRole-11Y2V2AD0O6SO
+        
+    ParentVPCStack:
+        Description: Please enter the Parent VPC Stack (do not change)
+        Type: String
+        Default: UngerwVPC   
+           
+        
+    CodeBuildSecurityGroup:
+        Description: The VPC SecurityGroup
+        Type: AWS::EC2::SecurityGroup::Id
+        #Default: UngerwSecurityGroups-ECSHostSecurityGroup-12IDIQ93BBSRW
+        
+    Subnets:
+        Description: Choose which subnets this ECS cluster should be deployed to
+        Type: List<AWS::EC2::Subnet::Id>    
+
+
+Resources:
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: CodeBuild by CF
+      ServiceRole: !Sub '${CodeBuildRole}'
+      Artifacts:
+        Type: CODEPIPELINE
+      BadgeEnabled: 'true'
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/ubuntu-base:14.04
+        EnvironmentVariables:
+          - Name: varName1
+            Value: varValue1
+          - Name: varName2
+            Value: varValue2
+            Type: PLAINTEXT
+          - Name: varName3
+            Value: /CodeBuild/testParameter
+            Type: PARAMETER_STORE
+      Source:
+        Type: CODEPIPELINE
+      TimeoutInMinutes: 10
+      VpcConfig:
+        #VpcId: !Ref CodeBuildVPC
+        VpcId: 
+           !Sub '${ParentVPCStack}'
+           #'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+           #'Fn::ImportValue': !Sub '${ParentVPCStack}'
+        #Subnets: [!Ref CodeBuildSubnet]
+        #Subnets: [!Ref Subnets]
+             # -  !Ref Subnets
+             #- 'Fn::ImportValue':
+             #     !Sub '${ParentVPCStack}-PrivateSubnets'
+        #SecurityGroupIds: !Ref CodeBuildSecurityGroup
+        Subnets: !Split
+        - ','
+        - 'Fn::ImportValue':
+           !Sub '${ParentVPCStack}-PrivateSubnets'
+        SecurityGroupIds: 
+            - !Ref CodeBuildSecurityGroup
+      Cache:
+        Type: S3
+        Location: mybucket/prefix
+ 
+

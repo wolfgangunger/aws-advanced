@@ -1,0 +1,24 @@
+---
+## ungerw 9.3.2018
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ECS-Repository'
+
+Resources:      
+  ECSRepo:    
+    Type: "AWS::ECR::Repository"
+    Properties: 
+      RepositoryName: ecs-repository
+
+ 
+#####################################################################################
+#  Outputs
+######################################################################################
+Outputs:    
+  Arn:
+    Description: The just created Repository
+    Value: !GetAtt ECSRepo.Arn
+    Export:
+        Name: ECSRepo
+    
+
+             

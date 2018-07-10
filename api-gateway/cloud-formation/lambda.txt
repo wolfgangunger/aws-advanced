@@ -1,0 +1,30 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'API Gateway by Wolfgang Unger'
+
+Resources:
+  Lambda1:
+    Type: "AWS::Lambda::Function"
+    Properties: 
+        Code:
+            ZipFile: >
+                var response = require('cfn-response');
+                
+                 def lambda_handler(event, context) {
+                
+                var input = parseInt(event.ResourceProperties.Input);
+                
+                var responseData = {Value: input * 5};
+                
+                response.send(event, context, response.SUCCESS, responseData);
+                
+                };
+                
+        Description: TestByCF
+        FunctionName: TestByCF
+        Handler: index.lambda_handler
+       # MemorySize: Integer
+        #ReservedConcurrentExecutions: Integer
+        Role: arn:aws:iam::016973021151:role/service-role/LambdaRole
+        Runtime: python2.7
+

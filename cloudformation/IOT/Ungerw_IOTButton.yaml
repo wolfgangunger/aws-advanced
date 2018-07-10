@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: 2010-09-09
+######################################################################################
+#  Description
+######################################################################################
+
+Description: >-
+  Creates required AWS resources to allow an AWS IoT button to send information
+  through an Amazon Simple Notification Service (Amazon SNS) topic to an email
+  address.
+#by wolfgang unger 4.2018
+Parameters:
+  IoTButtonDSN:
+    Type: String
+    AllowedPattern: >-
+      G030[A-Z][A-Z][0=9][0-9][0-9][0-5][0-9][1-7][0-9A-HJ-NP-X][0-9A-HJ-NP-X][0-9A-HJ-NP-X][0-9A-HJ-NP-X]
+    Description: >-
+      The device serial number (DSN) of the AWS IoT Button. This can be found on
+      the back of the button. The DSN must match the pattern of
+      'G030[A-Z][A-Z][0=9][0-9][0-9][0-5][0-9][1-7][0-9A-HJ-NP-X][0-9A-HJ-NP-X][0-9A-HJ-NP-X][0-9A-HJ-NP-X]'.
+  CertificateARN:
+    Type: String
+    Description: The Amazon Resource Name (ARN) of the existing AWS IoT certificate.
+  SNSTopicName:
+    Type: String
+    Default: aws-iot-button-sns-topic
+    Description: The name of the Amazon SNS topic for AWS CloudFormation to create.
+  SNSTopicRoleName:
+    Type: String
+    Default: aws-iot-button-sns-topic-role
+    Description: >-
+      The name of the IAM role for AWS CloudFormation to create. This IAM role
+      allows AWS IoT to send notifications to the Amazon SNS topic.
+  EmailAddress:
+    Type: String
+    Description: The email address for the Amazon SNS topic to send information to.
+Resources:
+  IoTThing:
+    Type: 'AWS::IoT::Thing'
+    Properties:
+      ThingName: !Join 
+        - ''
+        - - iotbutton_
+          - !Ref IoTButtonDSN
+  IoTPolicy:
+    Type: 'AWS::IoT::Policy'
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action: 'iot:Publish'
+            Effect: Allow
+            Resource: !Join 
+              - ''
+              - - 'arn:aws:iot:'
+                - !Ref 'AWS::Region'
+                - ':'
+                - !Ref 'AWS::AccountId'
+                - ':topic/iotbutton/'
+                - !Ref IoTButtonDSN
+  IoTPolicyPrincipalAttachment:
+    Type: 'AWS::IoT::PolicyPrincipalAttachment'
+    Properties:
+      PolicyName: !Ref IoTPolicy
+      Principal: !Ref CertificateARN
+  IoTThingPrincipalAttachment:
+    Type: 'AWS::IoT::ThingPrincipalAttachment'
+    Properties:
+      Principal: !Ref CertificateARN
+      ThingName: !Ref IoTThing
+  SNSTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties:
+      DisplayName: AWS IoT Button Press Notification
+      Subscription:
+        - Endpoint: !Ref EmailAddress
+          Protocol: email
+      TopicName: !Ref SNSTopicName
+  SNSTopicRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: iot.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'sns:Publish'
+                Resource: !Join 
+                  - ''
+                  - - 'arn:aws:sns:'
+                    - !Ref 'AWS::Region'
+                    - ':'
+                    - !Ref 'AWS::AccountId'
+                    - ':'
+                    - !Ref SNSTopicName
+          PolicyName: !Ref SNSTopicRoleName
+  IoTTopicRule:
+    Type: 'AWS::IoT::TopicRule'
+    Properties:
+      RuleName: !Join 
+        - ''
+        - - iotbutton_
+          - !Ref IoTButtonDSN
+      TopicRulePayload:
+        Actions:
+          - Sns:
+              RoleArn: !GetAtt 
+                - SNSTopicRole
+                - Arn
+              TargetArn: !Ref SNSTopic
+        AwsIotSqlVersion: 2015-10-08
+        RuleDisabled: false
+        Sql: !Join 
+          - ''
+          - - SELECT * FROM 'iotbutton/
+            - !Ref IoTButtonDSN
+            - ''''

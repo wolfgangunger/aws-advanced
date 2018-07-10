@@ -1,0 +1,12 @@
+---
+#
+Resources:
+  MyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      #AvailabilityZone: eu-west-2a
+      # irland: ami-0139299cc48861443
+      ImageId: ami-0139299cc48861443
+      #ImageId: ami-2140d84e
+      #bitnami-artifactory-5.8.3-0-r02-linux-ubuntu-16.04-x86_64-hvm-ebs-mp-8e0a3f30-ad47-4680-9be7-de5cfa913c21-ami-a3d9e9d9.4 (ami-2140d84e)
+      InstanceType: t2.micro

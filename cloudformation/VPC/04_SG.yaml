@@ -1,0 +1,30 @@
+Description: 'Simple Security Group'
+# by wolfgang unger 3.2018 
+
+Parameters:
+    VPC:
+        Description: Choose VPC 
+        Type: AWS::EC2::VPC::Id
+
+Resources:
+  # our security group
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupName: Ungerw-SecurityGroup
+      GroupDescription: Enable HTTP, HTTPS, SSH
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: 0.0.0.0/0
+

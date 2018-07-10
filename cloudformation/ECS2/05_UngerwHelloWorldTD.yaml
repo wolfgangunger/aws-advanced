@@ -1,0 +1,39 @@
+Description: >
+    Task definition hello-world
+
+# by wolfgang unger 4.2018
+
+Parameters: 
+
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: UngerwHelloWorldTD
+        
+Resources:
+
+    TaskDefinition:
+        Type: AWS::ECS::TaskDefinition
+        Properties:
+            Family:  !Ref AWS::StackName
+            NetworkMode: bridge
+            ContainerDefinitions:
+                - Name: !Ref AWS::StackName
+                  Essential: true
+                  Image: strm/helloworld-http
+                  Memory: 128
+                  PortMappings:
+                    - ContainerPort: 80
+                  LogConfiguration:
+                    LogDriver: awslogs
+                    Options:
+                        awslogs-group: !Ref AWS::StackName
+                        awslogs-region: !Ref AWS::Region
+    
+    CloudWatchLogsGroup:
+        Type: AWS::Logs::LogGroup
+        Properties: 
+            LogGroupName: !Ref AWS::StackName
+            RetentionInDays: 365  
+
+ 

@@ -1,0 +1,73 @@
+---
+## ungerw 9.3.2018
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Mappings Example - Jenkins with ImageId by Region'
+
+Parameters:
+
+    Subnet:
+        Description: Choose which subnets the Application Load Balancer should be deployed to
+        Type: AWS::EC2::Subnet::Id
+
+    SecurityGroup:
+        Description: Select the Security Group to use for the ECS cluster hosts
+        Type: AWS::EC2::SecurityGroup::Id
+        
+    KeyPairName:
+        Description: Select your KeyPair
+        Type: String
+        Default: ungerw-irland
+
+Mappings:
+  RegionMap:
+    'ap-south-1':
+      AMI: 'ami-531a4c3c'
+    'eu-west-3':
+      AMI: 'ami-8ee056f3'
+    'eu-west-2':
+      AMI: 'ami-403e2524'
+    'eu-west-1':
+      AMI: 'ami-d834aba1'
+    'ap-northeast-2':
+      AMI: 'ami-863090e8'
+    'ap-northeast-1':
+      AMI: 'ami-ceafcba8'
+    'sa-east-1':
+      AMI: 'ami-84175ae8'
+    'ca-central-1':
+      AMI: 'ami-a954d1cd'
+    'ap-southeast-1':
+      AMI: 'ami-68097514'
+    'ap-southeast-2':
+      AMI: 'ami-942dd1f6'
+    'eu-central-1':
+      AMI: 'ami-5652ce39'
+    'us-east-1':
+      AMI: 'ami-97785bed'
+    'us-east-2':
+      AMI: 'ami-f63b1193'
+    'us-west-1':
+      AMI: 'ami-824c4ee2'
+    'us-west-2':
+      AMI: 'ami-f2d3638a'
+
+Resources:      
+ 
+ MyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      # select image id in map
+      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+      InstanceType: m1.small
+      KeyName: !Ref KeyPairName
+      SubnetId: !Ref Subnet
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      Tags:
+        -
+          Key: 'Name'
+          Value: !Sub ${AWS::StackName} 
+ 
+ 
+
+ 

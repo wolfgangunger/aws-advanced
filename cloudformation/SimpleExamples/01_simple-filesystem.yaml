@@ -1,10 +1,12 @@
-# 
-Resources:
+Description: >
+    simple resource example
+#  by wolfgang unger 9.3.2018
 
+Resources:
   MasterStorage:
     Type: 'AWS::EFS::FileSystem'
     Properties:
       FileSystemTags:
       - Key: Name
-        Value: 'jenkins-master-storage'
+        Value: 'myFilesystem'
       PerformanceMode: generalPurpose

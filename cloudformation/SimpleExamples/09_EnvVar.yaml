@@ -1,9 +1,6 @@
-######################################################################################
-#  Description
-######################################################################################
 
 Description: >
-    docker ecs test (tomcat image) - tomcat image with port 8080 + env variables
+    env variables example
 #  by wolfgang unger 9.3.2018
 ######################################################################################
 #  Parameters
@@ -11,10 +8,10 @@ Description: >
 
 Parameters: 
 
-    EnvironmentName:
-        Description: An environment name that will be prefixed to resource names
-        Type: String
-        Default: env-variables
+    #EnvironmentName:
+    #    Description: An environment name that will be prefixed to resource names
+    #    Type: String
+    #    Default: env-variables
 
      # variables from the systems manager parameter store    
     EnvironmentVariable1:
@@ -22,10 +19,6 @@ Parameters:
         Type: 'AWS::SSM::Parameter::Value<String>'
         Default: ungerw-parameter1
         
-    #EnvironmentVariable2:
-    #    Type: 'AWS::SSM::Parameter::Value<String>'
-
-
 
 ######################################################################################
 #  Resources
@@ -52,9 +45,6 @@ Outputs:
         Description: A reference to the MasterStorage
         Value: !Ref MasterStorage
         Export:
-            #!GetAtt MasterELB.LoadBalancerFullName
-            #Name: !GetAtt MasterStorage.KmsKeyId 
-            #Name: !Ref  MasterStorage
             Name: !Sub '${AWS::StackName}-FileSystem'
 
 

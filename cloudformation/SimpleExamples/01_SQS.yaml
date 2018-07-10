@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+    SQS Queue 
+# created by wolfgang unger - 6.2018
+
+Resources:
+  MyQueue:
+   Type: AWS::SQS::Queue
+   Properties:
+    QueueName: "ppQueue1"
+    VisibilityTimeout: 30
+    DelaySeconds: 1
+    #KmsMasterKeyId: arn:aws:kms:eu-central-1...
+
+
+
+

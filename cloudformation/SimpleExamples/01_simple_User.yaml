@@ -1,5 +1,7 @@
-AWSTemplateFormatVersion: 2010-09-09
-# created by wolfgang unger - 3.2018
+
+Description: >
+    User Resource example
+#  by wolfgang unger 9.3.2018
 
 Resources:
   JenkinsUser:
@@ -9,12 +11,6 @@ Resources:
         Path: "/"
         LoginProfile:
             Password: jenkins12345        
-        #Groups:
-        #    - String
-        #LoginProfile:
-        #    LoginProfile Type
-        #ManagedPolicyArns:
-        #    - String
         Policies:
             - PolicyName: AmazonSSMFullAccess
               PolicyDocument:

@@ -59,14 +59,7 @@ Resources:
         #VpcId: !Ref CodeBuildVPC
         VpcId: 
            !Sub '${ParentVPCStack}'
-           #'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
-           #'Fn::ImportValue': !Sub '${ParentVPCStack}'
-        #Subnets: [!Ref CodeBuildSubnet]
-        #Subnets: [!Ref Subnets]
-             # -  !Ref Subnets
-             #- 'Fn::ImportValue':
-             #     !Sub '${ParentVPCStack}-PrivateSubnets'
-        #SecurityGroupIds: !Ref CodeBuildSecurityGroup
+
         Subnets: !Split
         - ','
         - 'Fn::ImportValue':

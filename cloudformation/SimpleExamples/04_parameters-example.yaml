@@ -1,14 +1,26 @@
+Description: >
+    Parameter example
+#  by wolfgang unger 9.3.2018
+
 Parameters:
-  SecurityGroupDescription:
-    Description: Security Group Description (Simple parameter)
+
+  ImageId:
+    Description: Name of the EC2 Image 
     Type: String
-  SecurityGroupPort:
+    Default: ami-a4c7edb2
+    
+  ContainterName:
+    Description: Name of the Container(Simple parameter)
+    Type: String
+    
+  ContainterPort:
     Description: Simple Description of a Number Parameter, with MinValue and MaxValue
     Type: Number
     MinValue: 1150
     MaxValue: 65535
+    
   InstanceType:
-    Description: WebServer EC2 instance type (has default, AllowedValues)
+    Description: Wordpress EC2 instance type (4 allowd values)
     Type: String
     Default: t2.small
     AllowedValues:
@@ -17,14 +29,32 @@ Parameters:
       - t2.micro
       - t2.small
     ConstraintDescription: must be a valid EC2 instance type.
-  DBPwd:
+    
+  JenkinsPwd:
     NoEcho: true
-    Description: The database admin account password (won't be echoed)
+    Description: The Jenkins admin account password 
     Type: String
+    
   KeyName:
-    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances. Linked to AWS Parameter
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
     Type: AWS::EC2::KeyPair::KeyName
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
+    
+  SecurityGroupName:
+    Description: Name of the SecurityGroup
+    Type: String
+    
+  SecurityGroupDescription:
+    Description: Description of the SecurityGroup
+    Type: String
+    
+  SecurityGroupPort:
+    Description: Simple Description of a Number Parameter, with MinValue and MaxValue
+    Type: Number
+    MinValue: 1150
+    MaxValue: 65535    
+    
+    
   SecurityGroupIngressCIDR:
     Description: The IP address range that can be used to communicate to the EC2 instances
     Type: String
@@ -33,17 +63,22 @@ Parameters:
     Default: 0.0.0.0/0
     AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
     ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+    
   MyVPC:
     Description: VPC to operate in
     Type: AWS::EC2::VPC::Id
+    
   MySubnetIDs:
     Description: Subnet IDs that is a List of Subnet Id
     Type: "List<AWS::EC2::Subnet::Id>"
-  DbSubnetIpBlocks:
+    
+  SubnetIpBlocks:
     Description: "Comma-delimited list of three CIDR blocks"
     Type: CommaDelimitedList
     Default: "10.0.48.0/24, 10.0.112.0/24, 10.0.176.0/24"
 
+ ################# Resources #################
+    
 Resources:
   MyEC2Instance:
     Type: "AWS::EC2::Instance"
@@ -51,7 +86,7 @@ Resources:
       #we reference the InstanceType parameter
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
-      ImageId: "ami-a4c7edb2"
+      ImageId: !Ref ImageId
       # here we reference an internal CloudFormation resource
       SubnetId: !Ref DbSubnet1
 
@@ -66,21 +101,22 @@ Resources:
           IpProtocol: tcp
       VpcId: !Ref MyVPC
 
+      ##### subnets #########
   DbSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref MyVPC
       # the select function allows us to select across a list
-      CidrBlock: !Select [0, !Ref DbSubnetIpBlocks]
+      CidrBlock: !Select [0, !Ref SubnetIpBlocks]
   DbSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref MyVPC
       # the select function allows us to select across a list
-      CidrBlock: !Select [1, !Ref DbSubnetIpBlocks]
+      CidrBlock: !Select [1, !Ref SubnetIpBlocks]
   DbSubnet3:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref MyVPC
       # the select function allows us to select across a list
-      CidrBlock: !Select [2, !Ref DbSubnetIpBlocks]
+      CidrBlock: !Select [2, !Ref SubnetIpBlocks]

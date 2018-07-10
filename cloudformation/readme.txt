@@ -1,7 +1,12 @@
-Cloud Fourmation YAML files to create
--VPC
--Alerting (cloud watch)
--Bastion host
--ECS
+github:
+https://github.com/wolfgangunger/aws-advanced
+https://github.com/wolfgangunger/aws-advanced/tree/master/cloudformation
 
-Files with prefix (01_) are dependent. Execute ECS or EC2 Stack only after executing VPC first
+
+resources
+parameters
+metadata
+mappings
+output
+nested stacks
+

@@ -7,7 +7,7 @@ Parameters:
   ImageId:
     Description: Name of the EC2 Image 
     Type: String
-    Default: ami-a4c7edb2
+    Default:  ami-e0ba5c83
     
   ContainterName:
     Description: Name of the Container(Simple parameter)
@@ -47,6 +47,7 @@ Parameters:
   SecurityGroupDescription:
     Description: Description of the SecurityGroup
     Type: String
+    Default: MySG1
     
   SecurityGroupPort:
     Description: Simple Description of a Number Parameter, with MinValue and MaxValue
@@ -87,8 +88,7 @@ Resources:
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
       ImageId: !Ref ImageId
-      # here we reference an internal CloudFormation resource
-      SubnetId: !Ref DbSubnet1
+
 
   MySecurityGroup:
     Type: "AWS::EC2::SecurityGroup"
@@ -101,22 +101,3 @@ Resources:
           IpProtocol: tcp
       VpcId: !Ref MyVPC
 
-      ##### subnets #########
-  DbSubnet1:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref MyVPC
-      # the select function allows us to select across a list
-      CidrBlock: !Select [0, !Ref SubnetIpBlocks]
-  DbSubnet2:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref MyVPC
-      # the select function allows us to select across a list
-      CidrBlock: !Select [1, !Ref SubnetIpBlocks]
-  DbSubnet3:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref MyVPC
-      # the select function allows us to select across a list
-      CidrBlock: !Select [2, !Ref SubnetIpBlocks]

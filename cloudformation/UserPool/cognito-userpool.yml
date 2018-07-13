@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+    SQS Queue 
+# created by wolfgang unger - 6.2018
+
+Resources:
+  CognitoUserPool:
+    Type: "AWS::Cognito::UserPool"
+    Properties:
+        #AdminCreateUserConfig: 
+        #    AdminCreateUserConfig
+        #AliasAttributes: 
+        #    - String
+        #AutoVerifiedAttributes: 
+        #    - String
+        #DeviceConfiguration: 
+        #    DeviceConfiguration
+        EmailConfiguration: 
+            EmailConfiguration
+        EmailVerificationMessage: Your username is {username} and temporary password is {####}. 
+        EmailVerificationSubject: Your temporary password
+        #LambdaConfig: 
+        #    LambdaConfig
+        #MfaConfiguration: String
+        #Policies: 
+        #    Policies
+        #Schema: 
+        #    - SchemaAttribute
+        #SmsAuthenticationMessage: String
+        #SmsConfiguration: 
+        #    SmsConfiguration
+        #SmsVerificationMessage: String
+        #UsernameAttributes: 
+        #    - String
+        UserPoolName: MyCognito-Pool
+        #UserPoolTags: 
+        #    String: String
+
+
+
+

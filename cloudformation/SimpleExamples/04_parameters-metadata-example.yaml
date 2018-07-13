@@ -1,6 +1,6 @@
-Description: >
-    Parameter example
-#  by wolfgang unger 9.3.2018
+## ungerw 9.3.2018
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Parameter Example'
 
 Parameters:
     
@@ -14,10 +14,10 @@ Parameters:
     MinValue: 1150
     MaxValue: 65535
     
-   ImageId:
+  ImageId:
     Description: Name of the EC2 Image 
     Type: String
-    Default: ami-a4c7edb2
+    Default:  ami-e0ba5c83
     
   InstanceType:
     Description: Wordpress EC2 instance type (4 allowd values)
@@ -47,6 +47,7 @@ Parameters:
   SecurityGroupDescription:
     Description: Description of the SecurityGroup
     Type: String
+    Default: MySG1
     
   SecurityGroupPort:
     Description: Simple Description of a Number Parameter, with MinValue and MaxValue
@@ -97,13 +98,13 @@ Metadata:
       - SecurityGroupPort
       - SecurityGroupIngressCIDR
 
-      - Label:
+    - Label:
         default: 'ECS'
       Parameters:   
       - ContainterName
       - ContainterPort
       
-      - Label:
+    - Label:
         default: 'EC2'
       Parameters:   
       - ImageId
@@ -120,8 +121,7 @@ Resources:
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
       ImageId: !Ref ImageId
-      # here we reference our internal resource 
-      SubnetId: !Ref DbSubnet1
+
 
   MySecurityGroup:
     Type: "AWS::EC2::SecurityGroup"
@@ -133,23 +133,3 @@ Resources:
           ToPort: !Ref SecurityGroupPort
           IpProtocol: tcp
       VpcId: !Ref MyVPC
-
-      ##### subnets #########
-  DbSubnet1:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref MyVPC
-      # the select function allows us to select across a list
-      CidrBlock: !Select [0, !Ref SubnetIpBlocks]
-  DbSubnet2:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref MyVPC
-      # the select function allows us to select across a list
-      CidrBlock: !Select [1, !Ref SubnetIpBlocks]
-  DbSubnet3:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref MyVPC
-      # the select function allows us to select across a list
-      CidrBlock: !Select [2, !Ref SubnetIpBlocks]

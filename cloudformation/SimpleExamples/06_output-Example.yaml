@@ -1,10 +1,14 @@
 ---
 ## ungerw 9.3.2018
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Output Example - Jenkins with ImageId by Region and Output'
+Description: 'Output Example - EC2 with ImageId by Region and Output'
 
 Parameters:
 
+    InstanceName:
+        Description: Name of the EC2 Instance
+        Type: String
+    
     Subnet:
         Description: Choose which subnets the Application Load Balancer should be deployed to
         Type: AWS::EC2::Subnet::Id
@@ -15,8 +19,8 @@ Parameters:
         
     KeyPairName:
         Description: Select your KeyPair
-        Type: String
-        Default: ungerw-irland
+        Type: AWS::EC2::KeyPair::KeyName
+        ConstraintDescription: must be the name of an existing EC2 KeyPair. 
 
 Mappings:
   RegionMap:
@@ -67,12 +71,12 @@ Resources:
       Tags:
         -
           Key: 'Name'
-          Value: !Sub ${AWS::StackName} 
+          Value: !Ref InstanceName
  
  ######################
  
- Outputs:
-  StackName:
+Outputs:
+  InstanceName:
     Description: 'Instance name'
     Value: !Ref MyInstance
 

@@ -1,12 +1,19 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >
-    SQS Queue 
-# created by wolfgang unger - 6.2018
+    User Pool with Cloud Formation
+# created by wolfgang unger - 7.2018
 
+Parameters:
+   UserPoolName:
+      Description: The name of the User Pool 
+      Type: String
+      Default:  Cognito-User-Pool
+      
 Resources:
   CognitoUserPool:
     Type: "AWS::Cognito::UserPool"
     Properties:
+        UserPoolName: !Ref UserPoolName
         #AdminCreateUserConfig: 
         #    AdminCreateUserConfig
         #AliasAttributes: 
@@ -15,27 +22,44 @@ Resources:
         #    - String
         #DeviceConfiguration: 
         #    DeviceConfiguration
-        EmailConfiguration: 
-            EmailConfiguration
+        #EmailConfiguration: 
+        #    ReplyToEmailAddress: 
+        #    SourceArn: noarnknown
         EmailVerificationMessage: Your username is {username} and temporary password is {####}. 
         EmailVerificationSubject: Your temporary password
+        SmsAuthenticationMessage: Your username is {username} and temporary password is {####}. 
+        #SmsConfiguration: 
+        #    SmsConfiguration
+        SmsVerificationMessage: Your username is {username} and temporary password is {####}. 
         #LambdaConfig: 
         #    LambdaConfig
         #MfaConfiguration: String
-        #Policies: 
-        #    Policies
+        Policies: 
+            PasswordPolicy:
+                MinimumLength: 6
+                RequireLowercase: true
+                RequireNumbers: true
+                RequireSymbols: false
+                RequireUppercase: true
         #Schema: 
         #    - SchemaAttribute
-        #SmsAuthenticationMessage: String
-        #SmsConfiguration: 
-        #    SmsConfiguration
-        #SmsVerificationMessage: String
+
         #UsernameAttributes: 
         #    - String
-        UserPoolName: MyCognito-Pool
-        #UserPoolTags: 
-        #    String: String
 
-
+  UserPoolClient:
+    Type: "AWS::Cognito::UserPoolClient"
+    Properties:
+        ClientName: MyClient
+        ExplicitAuthFlows: 
+            - ADMIN_NO_SRP_AUTH
+            - USER_PASSWORD_AUTH
+        GenerateSecret: true
+        #ReadAttributes: 
+        #    - String
+        RefreshTokenValidity: 30
+        UserPoolId: !Ref CognitoUserPool
+        #WriteAttributes: 
+        #    - String
 
 

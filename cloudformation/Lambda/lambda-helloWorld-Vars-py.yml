@@ -6,7 +6,7 @@ Parameters:
    HelloString:
       Description: the string to be returned 
       Type: String
-      Default: Hello Dudes
+      Default: Hello AWS Friends
 
 Resources:
   Lambda1:

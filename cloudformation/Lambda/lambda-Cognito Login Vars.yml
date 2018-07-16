@@ -6,17 +6,17 @@ Parameters:
    UserPoolId:
       Description: The ID of the referenced User Pool 
       Type: String
-      Default:  eu-central-1_C9SO0LAIk
+      Default:  your user pool id
       
    ClientId:
       Description: The ID of the User Pool Client App
       Type: String
-      Default:  7liqjgpl553nmnd7a7v2dpf0b8  
+      Default:   your client id 
       
    ClientSecret:
       Description: The secret of the User Pool Client App 
       Type: String
-      Default:  4h34an7msd7d6h0o45pmf57qnqrc71at3a0ke2kkia6he14784m     
+      Default:    your secret  
 
 Resources:
   Lambda1:

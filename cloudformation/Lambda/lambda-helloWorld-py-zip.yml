@@ -9,10 +9,6 @@ Resources:
         Code:
             S3Bucket: "ungerw-lambda-code"
             S3Key: "hello_lambda.zip"
-        #Code:
-        #    ZipFile: >
-        #        def lambda_handler(event, context):
-        #        return 'Hello from Lambda'
         Description: Test with Cloud Formation
         FunctionName: HelloWorldZipPyByCF
         Handler: lambda_function.lambda_handler

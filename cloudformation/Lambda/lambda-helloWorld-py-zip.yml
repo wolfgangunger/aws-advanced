@@ -12,6 +12,7 @@ Resources:
         Description: Test with Cloud Formation
         FunctionName: HelloWorldZipPyByCF
         Handler: lambda_function.lambda_handler
-        Role: arn:aws:iam::016973021151:role/service-role/LambdaRole
+        ## enter your role arn here
+        Role: arn:aws:iam::01.....
         Runtime: python2.7
 

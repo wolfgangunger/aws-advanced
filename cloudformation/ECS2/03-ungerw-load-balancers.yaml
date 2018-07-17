@@ -1,12 +1,13 @@
 Description: >
-    This template deploys an Application Load Balancer that exposes our various ECS services.
-    We create them it a seperate nested template, so it can be referenced by all of the other nested templates.
+    ALB for the ecs hosts and services
+#  by wolfgang unger 9.3.2018 - based on official amazon stacks
 
 Parameters:
 
     EnvironmentName:
         Description: An environment name that will be prefixed to resource names
         Type: String
+        Default: ecs-example
 
     VPC:
         Type: AWS::EC2::VPC::Id
@@ -21,7 +22,6 @@ Parameters:
         Type: AWS::EC2::SecurityGroup::Id
 
 Resources:
-
     LoadBalancer:
         Type: AWS::ElasticLoadBalancingV2::LoadBalancer
         Properties:
@@ -55,7 +55,6 @@ Resources:
             Protocol: HTTP
            
 Outputs:
-
     LoadBalancer:
         Description: A reference to the Application Load Balancer
         Value: !Ref LoadBalancer

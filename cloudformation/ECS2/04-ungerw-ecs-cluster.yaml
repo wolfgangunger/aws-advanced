@@ -1,22 +1,22 @@
 Description: >
-    This template deploys an ECS cluster to the provided VPC and subnets
-    using an Auto Scaling Group
+    ECS cluster and Auto Scaling Group
+#  by wolfgang unger 9.3.2018 - based on official amazon stacks
 
 Parameters:
-
     EnvironmentName:
         Description: An environment name that will be prefixed to resource names
         Type: String
-
+        Default: ecs-example
+        
     InstanceType:
         Description: Which instance type should we use to build the ECS cluster?
         Type: String
-        Default: c4.large
+        Default: t2.small
 
     ClusterSize:
         Description: How many ECS hosts do you want to initially deploy?
         Type: Number
-        Default: 4
+        Default: 2
 
     VPC:
         Description: Choose which VPC this ECS cluster should be deployed to
@@ -31,7 +31,6 @@ Parameters:
         Type: AWS::EC2::SecurityGroup::Id
 
 Mappings:
-
     # These are the latest ECS optimized AMIs as of Feb 2018:
     #
     #   amzn-ami-2017.09.h-amazon-ecs-optimized
@@ -76,7 +75,12 @@ Mappings:
             AMI: ami-69f7b805
 
 Resources:
-
+# the ecs repo for our images
+    ECSRepo:    
+         Type: "AWS::ECR::Repository"
+         Properties: 
+           RepositoryName: !Sub ${EnvironmentName}-repository
+      
     ECSCluster:
         Type: AWS::ECS::Cluster
         Properties:
@@ -329,9 +333,8 @@ Resources:
                       - ecs:DescribeServices
                       - ecs:UpdateService
                       Resource: "*"
-
+##################################################
 Outputs:
-
     Cluster:
         Description: A reference to the ECS cluster
         Value: !Ref ECSCluster
@@ -343,3 +346,8 @@ Outputs:
     ECSAutoScalingGroupName:
         Description: A reference to ECS AutoScaling Group Name
         Value: !Ref ECSAutoScalingGroup
+    EcsRepoArn:
+        Description: The just created Repository
+        Value: !GetAtt ECSRepo.Arn
+        Export:
+            Name: ECSRepo

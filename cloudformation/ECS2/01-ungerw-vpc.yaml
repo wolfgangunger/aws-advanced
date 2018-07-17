@@ -1,14 +1,13 @@
 Description: >
-    This template deploys a VPC, with a pair of public and private subnets spread 
-    across two Availabilty Zones. It deploys an Internet Gateway, with a default 
-    route on the public subnets. It deploys a pair of NAT Gateways (one in each AZ), 
-    and default routes for them in the private subnets.
+    VPC with ublic and private subnets, internet gateway and nat
+#  by wolfgang unger 9.3.2018 - based on official amazon stacks
 
 Parameters:
 
     EnvironmentName:
         Description: An environment name that will be prefixed to resource names
         Type: String
+        Default: ecs-example
 
     VpcCIDR: 
         Description: Please enter the IP range (CIDR notation) for this VPC
@@ -36,7 +35,6 @@ Parameters:
         Default: 10.192.21.0/24
 
 Resources:
-
     VPC: 
         Type: AWS::EC2::VPC
         Properties:
@@ -199,7 +197,6 @@ Resources:
             SubnetId: !Ref PrivateSubnet2
 
 Outputs: 
-
     VPC: 
         Description: A reference to the created VPC
         Value: !Ref VPC

@@ -6,7 +6,7 @@ Resources:
     VPC:
         Type: AWS::CloudFormation::Stack
         Properties:
-            TemplateURL: https://github.com/wolfgangunger/aws-advanced/blob/master/cloudformation/ECS2/01-ungerw-vpc.yaml
+            TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-ecs-example/01-ungerw-vpc.yaml 
             Parameters:
                 EnvironmentName:    !Ref AWS::StackName
                 VpcCIDR:            10.180.0.0/16
@@ -18,7 +18,7 @@ Resources:
     SecurityGroups:
         Type: AWS::CloudFormation::Stack
         Properties:
-            TemplateURL: https://github.com/wolfgangunger/aws-advanced/blob/master/cloudformation/ECS2/02-ungerw-security-groups.yaml
+            TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-ecs-example/02-ungerw-security-groups.yaml 
             Parameters: 
                 EnvironmentName: !Ref AWS::StackName
                 VPC: !GetAtt VPC.Outputs.VPC
@@ -26,7 +26,7 @@ Resources:
     ALB:
         Type: AWS::CloudFormation::Stack
         Properties:
-            TemplateURL: https://github.com/wolfgangunger/aws-advanced/blob/master/cloudformation/ECS2/03-ungerw-load-balancers.yaml
+            TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-ecs-example/03-ungerw-load-balancers.yaml 
             Parameters:
                 EnvironmentName: !Ref AWS::StackName
                 VPC: !GetAtt VPC.Outputs.VPC
@@ -36,7 +36,7 @@ Resources:
     ECS:
         Type: AWS::CloudFormation::Stack
         Properties:
-            TemplateURL: https://github.com/wolfgangunger/aws-advanced/blob/master/cloudformation/ECS2/04-ungerw-ecs-cluster.yaml
+            TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-ecs-example/04-ungerw-ecs-cluster.yaml 
             Parameters:
                 EnvironmentName: !Ref AWS::StackName
                 InstanceType: t2.large
@@ -49,7 +49,7 @@ Resources:
     LifecycleHook:
         Type: AWS::CloudFormation::Stack
         Properties:
-            TemplateURL: https://github.com/wolfgangunger/aws-advanced/blob/master/cloudformation/ECS2/05-ungerw-lifecyclehook.yaml
+            TemplateURL:  https://s3.eu-central-1.amazonaws.com/ungerw-ecs-example/05-ungerw-lifecyclehook.yaml 
             Parameters:
                 Cluster: !GetAtt ECS.Outputs.Cluster
                 ECSAutoScalingGroupName: !GetAtt ECS.Outputs.ECSAutoScalingGroupName

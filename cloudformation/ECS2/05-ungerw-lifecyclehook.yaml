@@ -12,7 +12,6 @@ Parameters:
   ECSAutoScalingGroupName:
     Type: String
     Description: Name of Auto Scaling Group
-    Default: 
 
 Resources:
   NotificationTopic:

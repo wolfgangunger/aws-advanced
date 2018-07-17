@@ -7,9 +7,12 @@ Parameters:
   Cluster:
     Type: String
     Description: Name of ECS Cluster
+    Default: ecs-example
+    
   ECSAutoScalingGroupName:
     Type: String
     Description: Name of Auto Scaling Group
+    Default: 
 
 Resources:
   NotificationTopic:

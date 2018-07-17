@@ -1,9 +1,8 @@
 Description: >
-    ECS example , vpc, infrastructure, ecs-cluster and service
+    ECS example , vpc, infrastructure, ecs-cluster
 #  by wolfgang unger 9.3.2018 - based on official amazon infrastructure stacks
 
 Resources:
-
     VPC:
         Type: AWS::CloudFormation::Stack
         Properties:
@@ -46,29 +45,6 @@ Resources:
                 SecurityGroup: !GetAtt SecurityGroups.Outputs.ECSHostSecurityGroup
                 Subnets: !GetAtt VPC.Outputs.PrivateSubnets
 
-    ProductService:
-        Type: AWS::CloudFormation::Stack
-        Properties:
-            TemplateURL: https://s3.amazonaws.com/ecs-refarch-cloudformation/services/product-service/service.yaml
-            Parameters:
-                VPC: !GetAtt VPC.Outputs.VPC
-                Cluster: !GetAtt ECS.Outputs.Cluster
-                DesiredCount: 2
-                Listener: !GetAtt ALB.Outputs.Listener 
-                Path: /products
-
-    WebsiteService:
-        Type: AWS::CloudFormation::Stack
-        Properties:
-            TemplateURL: https://s3.amazonaws.com/ecs-refarch-cloudformation/services/website-service/service.yaml
-            Parameters:
-                VPC: !GetAtt VPC.Outputs.VPC
-                Cluster: !GetAtt ECS.Outputs.Cluster
-                DesiredCount: 2
-                ProductServiceUrl: !Join [ "/", [ !GetAtt ALB.Outputs.LoadBalancerUrl, "products" ]]
-                Listener: !GetAtt ALB.Outputs.Listener 
-                Path: /
-                ECSServiceAutoScalingRoleARN: !GetAtt ECS.Outputs.ECSServiceAutoScalingRole
 
     LifecycleHook:
         Type: AWS::CloudFormation::Stack

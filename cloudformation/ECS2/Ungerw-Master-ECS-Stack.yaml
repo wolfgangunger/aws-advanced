@@ -46,6 +46,14 @@ Resources:
                 SecurityGroup: !GetAtt SecurityGroups.Outputs.ECSHostSecurityGroup
                 Subnets: !GetAtt VPC.Outputs.PrivateSubnets
 
+    LifecycleHook:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: https://github.com/wolfgangunger/aws-advanced/blob/master/cloudformation/ECS2/05-ungerw-lifecyclehook.yaml
+            Parameters:
+                Cluster: !GetAtt ECS.Outputs.Cluster
+                ECSAutoScalingGroupName: !GetAtt ECS.Outputs.ECSAutoScalingGroupName                
+                
     ProductService:
         Type: AWS::CloudFormation::Stack
         Properties:
@@ -70,13 +78,7 @@ Resources:
                 Path: /
                 ECSServiceAutoScalingRoleARN: !GetAtt ECS.Outputs.ECSServiceAutoScalingRole
 
-    LifecycleHook:
-        Type: AWS::CloudFormation::Stack
-        Properties:
-            TemplateURL: https://s3.amazonaws.com/ecs-refarch-cloudformation/infrastructure/lifecyclehook.yaml
-            Parameters:
-                Cluster: !GetAtt ECS.Outputs.Cluster
-                ECSAutoScalingGroupName: !GetAtt ECS.Outputs.ECSAutoScalingGroupName
+
 
 Outputs:
 

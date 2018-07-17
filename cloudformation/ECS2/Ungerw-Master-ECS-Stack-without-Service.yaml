@@ -49,17 +49,8 @@ Resources:
     LifecycleHook:
         Type: AWS::CloudFormation::Stack
         Properties:
-            TemplateURL: https://s3.amazonaws.com/ecs-refarch-cloudformation/infrastructure/lifecyclehook.yaml
+            TemplateURL: https://github.com/wolfgangunger/aws-advanced/blob/master/cloudformation/ECS2/05-ungerw-lifecyclehook.yaml
             Parameters:
                 Cluster: !GetAtt ECS.Outputs.Cluster
                 ECSAutoScalingGroupName: !GetAtt ECS.Outputs.ECSAutoScalingGroupName
 
-Outputs:
-
-    ProductServiceUrl: 
-        Description: The URL endpoint for the product service
-        Value: !Join [ "/", [ !GetAtt ALB.Outputs.LoadBalancerUrl, "products" ]]
-
-    WebsiteServiceUrl: 
-        Description: The URL endpoint for the website service
-        Value: !Join ["", [ !GetAtt ALB.Outputs.LoadBalancerUrl, "/" ]]

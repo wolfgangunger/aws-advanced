@@ -2,13 +2,21 @@ Description: >
     ECS example , vpc, infrastructure, ecs-cluster
 #  by wolfgang unger 9.3.2018 - based on official amazon infrastructure stacks
 
+Parameters:
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: ecs-example
+
+
 Resources:
     VPC:
         Type: AWS::CloudFormation::Stack
         Properties:
             TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-ecs-example/01-ungerw-vpc.yaml 
             Parameters:
-                EnvironmentName:    !Ref AWS::StackName
+                #EnvironmentName:    !Ref AWS::StackName
+                EnvironmentName:    !Ref EnvironmentName
                 VpcCIDR:            10.180.0.0/16
                 PublicSubnet1CIDR:  10.180.8.0/21
                 PublicSubnet2CIDR:  10.180.16.0/21
@@ -20,7 +28,8 @@ Resources:
         Properties:
             TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-ecs-example/02-ungerw-security-groups.yaml 
             Parameters: 
-                EnvironmentName: !Ref AWS::StackName
+                #EnvironmentName: !Ref AWS::StackName
+                EnvironmentName:    !Ref EnvironmentName    
                 VPC: !GetAtt VPC.Outputs.VPC
 
     ALB:
@@ -28,7 +37,8 @@ Resources:
         Properties:
             TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-ecs-example/03-ungerw-load-balancers.yaml 
             Parameters:
-                EnvironmentName: !Ref AWS::StackName
+                #EnvironmentName: !Ref AWS::StackName
+                EnvironmentName:  !Ref EnvironmentName  
                 VPC: !GetAtt VPC.Outputs.VPC
                 Subnets: !GetAtt VPC.Outputs.PublicSubnets
                 SecurityGroup: !GetAtt SecurityGroups.Outputs.LoadBalancerSecurityGroup
@@ -38,19 +48,13 @@ Resources:
         Properties:
             TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-ecs-example/04-ungerw-ecs-cluster.yaml 
             Parameters:
-                EnvironmentName: !Ref AWS::StackName
-                InstanceType: t2.large
-                ClusterSize: 4
+                #EnvironmentName: !Ref AWS::StackName
+                EnvironmentName:  !Ref EnvironmentName  
+                InstanceType: t2.small
+                ClusterSize: 2
                 VPC: !GetAtt VPC.Outputs.VPC
                 SecurityGroup: !GetAtt SecurityGroups.Outputs.ECSHostSecurityGroup
                 Subnets: !GetAtt VPC.Outputs.PrivateSubnets
 
 
-    LifecycleHook:
-        Type: AWS::CloudFormation::Stack
-        Properties:
-            TemplateURL:  https://s3.eu-central-1.amazonaws.com/ungerw-ecs-example/05-ungerw-lifecyclehook.yaml 
-            Parameters:
-                Cluster: !GetAtt ECS.Outputs.Cluster
-                ECSAutoScalingGroupName: !GetAtt ECS.Outputs.ECSAutoScalingGroupName
 

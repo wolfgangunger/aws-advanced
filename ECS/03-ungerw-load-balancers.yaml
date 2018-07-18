@@ -58,13 +58,19 @@ Outputs:
     LoadBalancer:
         Description: A reference to the Application Load Balancer
         Value: !Ref LoadBalancer
+        Export: 
+           Name: ECS-ALB
 
     LoadBalancerUrl:
         Description: The URL of the ALB
         Value: !GetAtt LoadBalancer.DNSName
+        Export: 
+           Name: ECS-ALB-URL
 
     Listener:
         Description: A reference to a port 80 listener
         Value: !Ref LoadBalancerListener  
+        Export: 
+            Name: ECS-ALB-ARN
 
     

@@ -1,5 +1,5 @@
 Description: >
-    VPC with ublic and private subnets, internet gateway and nat
+    VPC with public and private subnets, internet gateway and nat
 #  by wolfgang unger 9.3.2018 - based on official amazon stacks
 
 Parameters:

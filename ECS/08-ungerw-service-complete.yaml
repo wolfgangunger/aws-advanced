@@ -41,7 +41,7 @@ Parameters:
     ContainerPort:
         Description: The container port
         Type: Number
-        Default: 8001
+        Default: 8080
 
 Resources:
 
@@ -162,7 +162,76 @@ Resources:
             RoleARN: !ImportValue ECS-ALB-ARN
             ScalableDimension: ecs:service:DesiredCount
             ServiceNamespace: ecs
-                    #######################
+            
+    ServiceScaleOutPolicy:
+        Type : "AWS::ApplicationAutoScaling::ScalingPolicy"
+        Properties:
+            PolicyName: ServiceScaleOutPolicy
+            PolicyType: StepScaling
+            ScalingTargetId: !Ref ServiceScalableTarget
+            StepScalingPolicyConfiguration:
+                AdjustmentType: ChangeInCapacity
+                Cooldown: 1800
+                MetricAggregationType: Average
+                StepAdjustments:
+                - MetricIntervalLowerBound: 0
+                  ScalingAdjustment: 1
+
+    ServiceScaleInPolicy:
+        Type : "AWS::ApplicationAutoScaling::ScalingPolicy"
+        Properties:
+            PolicyName: ServiceScaleInPolicy
+            PolicyType: StepScaling
+            ScalingTargetId: !Ref ServiceScalableTarget
+            StepScalingPolicyConfiguration:
+                AdjustmentType: ChangeInCapacity
+                Cooldown: 1800
+                MetricAggregationType: Average
+                StepAdjustments:
+                - MetricIntervalUpperBound: 0
+                  ScalingAdjustment: -1
+
+    CPUScaleOutAlarm:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+            AlarmName: CPU utilization greater than 90%
+            AlarmDescription: Alarm if cpu utilization greater than 90% of reserved cpu
+            Namespace: AWS/ECS
+            MetricName: CPUUtilization
+            Dimensions:
+            - Name: ClusterName
+              Value: !Ref Cluster
+            - Name: ServiceName
+              Value: !GetAtt Service.Name
+            Statistic: Maximum
+            Period: '60'
+            EvaluationPeriods: '3'
+            Threshold: '90'
+            ComparisonOperator: GreaterThanThreshold
+            AlarmActions:
+            - !Ref ServiceScaleOutPolicy
+
+    CPUScaleInAlarm:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+            AlarmName: CPU utilization less than 70%
+            AlarmDescription: Alarm if cpu utilization greater than 70% of reserved cpu
+            Namespace: AWS/ECS
+            MetricName: CPUUtilization
+            Dimensions:
+            - Name: ClusterName
+              Value: !Ref Cluster
+            - Name: ServiceName
+              Value: !GetAtt Service.Name
+            Statistic: Maximum
+            Period: '60'
+            EvaluationPeriods: '10'
+            Threshold: '70'
+            ComparisonOperator: LessThanThreshold
+            AlarmActions:
+            - !Ref ServiceScaleInPolicy
+            
+############# output     #######################
 Outputs:
     ServiceUrl: 
         Description: The URL endpoint for the service

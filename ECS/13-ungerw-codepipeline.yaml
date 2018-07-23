@@ -56,7 +56,7 @@ Parameters:
     Cluster:
         Type: String
         Description: Name of the service where the builded artifact would be deployed
-        Default: UngerwECS
+        Default: ecs-example
 ######################################################################################
 #  Resources
 ######################################################################################    

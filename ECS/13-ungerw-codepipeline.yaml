@@ -1,0 +1,382 @@
+Description: >
+    build pipleline - 3 stages : source and build and ecs deploy  
+# Wolfgang Unger 4.2018
+
+######################################################################################
+#  Parameter
+######################################################################################   
+Parameters:
+    StackPrefix:
+        Type: String
+        Description: Name prefix for the templates which gets deployed by CodePipeline
+        Default: pipeline
+        
+    GitHubRepository:
+        Description: Enter the repository name that should be monitored for changes
+        Type: String
+        Default: ungerw-spring-boot-docker
+
+    GitHubBranch:
+        Description: Enter the GitHub branch to monitored
+        Type: String
+        Default: master
+        
+    GitHubOAuthToken: 
+        Description: Create a token with 'repo' and 'admin:repo_hook' permissions here https://github.com/settings/tokens
+        Type: String
+        NoEcho: true
+
+    GitHubUser:
+        Description: Enter GitHub username of the repository owner
+        Type: String  
+        Default: wolfgangunger
+
+    KMSKeyId:
+        Type: String
+        Description: KMS Key ID CodePipeline artifacts on S3
+        # enter your kms key in here
+        Default: arn:aws:kms:us-west-1:0....xxx:key/426f7a.....xxx
+        
+        
+    ArtifactStoreS3Bucket:
+        Type: String
+        Description: Name of the S3 bucket to store CodePipeline artificats.
+        Default: codepipeline-ca-wolfgang
+        
+    NetworkStack:
+        Type: String
+        Description: ECS network stack name
+        Default: UngerwVPC
+        
+    Service:
+        Type: String
+        Description: Ref to the service where the builded artifact would be deployed
+        Default: UngerwSpringBootService-Service-1J5TTIG1ESEHD
+
+    Cluster:
+        Type: String
+        Description: Name of the service where the builded artifact would be deployed
+        Default: UngerwECS
+######################################################################################
+#  Resources
+######################################################################################    
+Resources:
+
+    CodeBuildRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: !Sub ${StackPrefix}-pipeline.${AWS::Region}.CodeBuild
+            Path: /services/
+            AssumeRolePolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                    - Action:
+                        - sts:AssumeRole
+                      Effect: Allow
+                      Principal:
+                        Service: codebuild.amazonaws.com
+            Policies:
+                - 
+                  PolicyName: CodeBuildAccessPolicy
+                  PolicyDocument:
+                    Version: '2012-10-17'
+                    Statement:
+                      - 
+                        Effect: Allow
+                        Action:
+                          - s3:PutObject
+                          - s3:GetObject
+                          - s3:GetObjectVersion
+                          - s3:ListBucket
+                        Resource:
+                          - !Sub arn:aws:s3:::${ArtifactStoreS3Bucket}
+                          - !Sub arn:aws:s3:::${ArtifactStoreS3Bucket}/*
+                      - 
+                        Effect: Allow
+                        Action:
+                          - s3:GetBucketTagging
+                        Resource:
+                          - !Sub 'arn:aws:s3:::*'
+                - 
+                  PolicyName: Logs
+                  PolicyDocument:
+                    Version: '2012-10-17'
+                    Statement:
+                      - 
+                        Effect: Allow
+                        Action:
+                          - logs:CreateLogGroup
+                          - logs:CreateLogStream
+                          - logs:PutLogEvents
+                        Resource:
+                          - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*'
+                - 
+                  PolicyName: EcrAuth
+                  PolicyDocument:
+                    Version: '2012-10-17'
+                    Statement:
+                      - 
+                        Effect: Allow
+                        Action:
+                          - kms:Encrypt
+                          - kms:Decrypt
+                          - kms:*
+                          - cloudformation:ValidateTemplate
+                        Resource:
+                          - '*'
+                          
+                - 
+                 PolicyName: ECSAccess
+                 PolicyDocument:
+                   Version: '2012-10-17'
+                   Statement:
+                     - 
+                      Effect: Allow
+                      Action:
+                        - "ssm:GetParametersByPath"
+                        - "ssm:GetParameters"                        
+                        - "ssm:GetParameter"  
+                        - "application-autoscaling:DeleteScalingPolicy"
+                        - "application-autoscaling:DeregisterScalableTarget"
+                        - "application-autoscaling:DescribeScalableTargets"
+                        - "application-autoscaling:DescribeScalingActivities"
+                        - "application-autoscaling:DescribeScalingPolicies"
+                        - "application-autoscaling:PutScalingPolicy"
+                        - "application-autoscaling:RegisterScalableTarget"
+                        - "autoscaling:UpdateAutoScalingGroup"
+                        - "autoscaling:CreateAutoScalingGroup"
+                        - "autoscaling:CreateLaunchConfiguration"
+                        - "autoscaling:DeleteAutoScalingGroup"
+                        - "autoscaling:DeleteLaunchConfiguration"
+                        - "autoscaling:Describe*"
+                        - "cloudformation:CreateStack"
+                        - "cloudformation:DeleteStack"
+                        - "cloudformation:DescribeStack*"
+                        - "cloudformation:UpdateStack"
+                        - "cloudwatch:DescribeAlarms"
+                        - "cloudwatch:DeleteAlarms"
+                        - "cloudwatch:GetMetricStatistics"
+                        - "cloudwatch:PutMetricAlarm"
+                        - "ecr:GetAuthorizationToken"
+                        - "ecr:BatchCheckLayerAvailability"
+                        - "ecr:GetDownloadUrlForLayer"
+                        - "ecr:BatchGetImage"
+                        - "ecs:*"
+                        - "ecr:*"
+                        - "events:DescribeRule"
+                        - "events:DeleteRule"
+                        - "events:ListRuleNamesByTarget"
+                        - "events:ListTargetsByRule"
+                        - "events:PutRule"
+                        - "events:PutTargets"
+                        - "events:RemoveTargets"
+                        - "iam:ListAttachedRolePolicies"
+                        - "iam:ListInstanceProfiles"
+                        - "iam:ListRoles"
+                        - "logs:CreateLogGroup"
+                        - "logs:DescribeLogGroups"
+                        - "logs:FilterLogEvents"
+                        - "route53:GetHostedZone"
+                        - "route53:ListHostedZonesByName"
+                        - "route53:GetHealthCheck"
+                        - "servicediscovery:CreatePrivateDnsNamespace"
+                        - "servicediscovery:CreateService"
+                        - "servicediscovery:GetNamespace"
+                        - "servicediscovery:GetOperation"
+                        - "servicediscovery:GetService"
+                        - "servicediscovery:ListNamespaces"
+                        - "servicediscovery:ListServices"
+                        - "servicediscovery:UpdateService"
+                             
+                      Resource:
+                        - '*'                          
+                          
+
+    CodePipelineRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: !Sub ${StackPrefix}-pipeline.${AWS::Region}.CodePipeline
+            Path: /services/
+            AssumeRolePolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                  - Action:
+                      - sts:AssumeRole
+                    Effect: Allow
+                    Principal:
+                      Service: codepipeline.amazonaws.com
+            Policies:
+              - 
+                PolicyName: CodePipelineAccessPolicy
+                PolicyDocument:
+                  Version: '2012-10-17'
+                  Statement:
+                    - 
+                      Effect: Allow
+                      Action:
+                        - cloudformation:*
+                  
+                      Resource:
+                        - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/*'
+                    - 
+                      Effect: Allow
+                      Action:
+                        - codebuild:StartBuild
+                        - codebuild:BatchGetBuilds
+                      Resource:
+                        - !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/*'
+                    - 
+                      Effect: Allow
+                      Action:
+                        - codecommit:GetBranch
+                        - codecommit:GetCommit
+                        - codecommit:UploadArchive
+                        - codecommit:GetUploadArchiveStatus
+                        - codecommit:CancelUploadArchive
+                        - iam:PassRole
+                        - lambda:ListFunctions
+                        - sts:AssumeRole
+                        - "ecs:*"
+                      Resource:
+                        - '*'
+
+              - 
+                PolicyName: ArtifactStorePolicy
+                PolicyDocument:
+                  Version: '2012-10-17'
+                  Statement:
+                    - 
+                      Effect: Allow
+                      Action:
+                        - s3:PutObject
+                        - s3:GetObject
+                        - s3:GetObjectVersion
+                        - s3:ListBucket
+                      Resource:
+                        - !Sub arn:aws:s3:::${ArtifactStoreS3Bucket}
+                        - !Sub arn:aws:s3:::${ArtifactStoreS3Bucket}/*
+                    - 
+                      Effect: Allow
+                      Action:
+                        - s3:GetBucketTagging
+                      Resource:
+                        - !Sub 'arn:aws:s3:::*'
+                    - 
+                      Effect: Allow
+                      Action:
+                        - "kms:Encrypt"
+                        - "kms:Decrypt"
+                        - "kms:ReEncrypt*"
+                        - "kms:GenerateDataKey*"
+                        - "kms:DescribeKey"
+                      Resource:
+                        - '*'
+                        
+
+                       
+
+    BuildJava:
+        Type: AWS::CodeBuild::Project
+        DependsOn:
+        - CodeBuildRole 
+        Properties:
+            Name: !Sub ${StackPrefix}-${GitHubRepository}-Java
+            Description: Build ECS cluster
+            ServiceRole: !GetAtt 'CodeBuildRole.Arn'
+            # IMPORTANT! Define KMS CMK for Cross Account Access
+            #EncryptionKey: !Ref KMSKeyId
+            Source:
+                Type: CODEPIPELINE
+                BuildSpec: buildspec.yml
+            Artifacts:
+                Type: CODEPIPELINE
+                #Name: build.zip
+                #Packaging: ZIP
+            Environment:
+                Type: LINUX_CONTAINER
+                ComputeType: BUILD_GENERAL1_SMALL
+                #Image: aws/codebuild/java:openjdk-8
+                Image: aws/codebuild/docker:17.09.0
+                EnvironmentVariables:
+                - Name: 'PIPELINE_STACK'
+                  Value: !Ref 'AWS::StackName'
+                  Type: PLAINTEXT
+                - Name: 'STACK_PREFIX'
+                  Value: !Ref 'StackPrefix'
+                  Type: PLAINTEXT 
+                - Name: 'NETWORK_STACK'
+                  Value: !Ref 'NetworkStack'
+                  Type: PLAINTEXT  
+                - Name: 'TEMPLATE_BUCKET'
+                  Value: !Ref 'ArtifactStoreS3Bucket'
+                  Type: PLAINTEXT
+                - Name: 'TEMPLATE_PREFIX'
+                  Value: !Ref GitHubRepository
+                  Type: PLAINTEXT
+                - Name: 'KMS_KEY_ID'
+                  Value: !Ref 'KMSKeyId'
+                  Type: PLAINTEXT
+      
+                        
+    EcsServicePipeline:
+        Type: AWS::CodePipeline::Pipeline
+        Properties:
+            ArtifactStore:
+                Type: S3
+                Location: !Ref 'ArtifactStoreS3Bucket'
+                EncryptionKey:
+                    Id: !Ref KMSKeyId
+                    Type: KMS
+            Name: !Sub ${StackPrefix}-${GitHubRepository}
+            RoleArn: !GetAtt 'CodePipelineRole.Arn'
+            Stages:
+            
+                - Name: Source
+                  Actions:
+                    - Name: GitHub
+                      ActionTypeId:
+                        Category: Source
+                        Owner: ThirdParty
+                        Version: 1
+                        Provider: GitHub
+                      OutputArtifacts:
+                         -  Name: Source
+                      Configuration:
+                        #Owner: 
+                        Owner: !Ref GitHubUser
+                        Repo: !Ref 'GitHubRepository'
+                        Branch: !Ref 'GitHubBranch'
+                        OAuthToken:  !Ref GitHubOAuthToken
+                  
+
+                - Name: BuildJava
+                  Actions:
+                    - Name: BuildJava
+                      ActionTypeId:
+                        Category: Build
+                        Owner: AWS
+                        Provider: CodeBuild
+                        Version: '1'
+                      Configuration:
+                        ProjectName: !Ref 'BuildJava'
+                      InputArtifacts:
+                        - Name: Source
+                      OutputArtifacts:
+                        - Name: BuildJava
+                      RunOrder: '1'
+                      
+                - Name: DeployIntoDev
+                  Actions:
+                    - Name: DeployECSContainer
+                      RunOrder: 1
+                      ActionTypeId:
+                        Category: Deploy
+                        Owner: AWS
+                        Provider: ECS
+                        Version: 1
+                      InputArtifacts:
+                        - Name: BuildJava
+                      Configuration:
+                        ClusterName: !Ref Cluster
+                        ServiceName: !Ref Service
+                        FileName: imagedefinitions.json                     

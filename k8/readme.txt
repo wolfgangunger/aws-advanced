@@ -32,14 +32,15 @@ ip-172-31-40-255   NotReady   master    4m        v1.10.0
 
 setup network:
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/canal/master/k8s-install/1.7/rbac.yaml
-kubectl apply -f https://raw.githubusercontent.com/projectcalico/canal/master/k8s-install/1.7/canal.yaml
-(kubectl apply -f https://raw.githubusercontent.com/projectcalico/canal/master/k8s-install/1.7/canal.yaml --validate=false)
+#kubectl apply -f https://raw.githubusercontent.com/projectcalico/canal/master/k8s-install/1.7/canal.yaml
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/canal/master/k8s-install/1.7/canal.yaml --validate=false
 
-
+############################################
 Nodes:
 We need to install docker and install kubelet, kubectl and kubeadm on all nodes that will join the cluster.
 
 join nodes:
+sudo -i
 swapoff --all
 kubeadm join 172.31.27.246:6443 --token rziq1g.afsbx5vixawn0fwj --discovery-token-ca-cert-hash sha256:2617d81b9d951d9b5c399068bc5b7bbcbe9c2f036cb41f1f494d03ea59894007
 

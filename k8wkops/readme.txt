@@ -6,7 +6,7 @@ See also
 https://aws.amazon.com/de/blogs/compute/kubernetes-clusters-aws-kops/
 
 Preconditions:
-install aws-cli, kops on your local ubuntu machine
+install aws-cli, kops on your local (linux will work perfect) machine
 
 steps: 
 -aws configure for your cluster region 
@@ -15,7 +15,7 @@ steps:
 -create dashboard
 -create user + rolebinding for dashboard
 
-
+------------------------------- create k8 cluster --------------------------
 #create s3 bucket
 aws s3api create-bucket --bucket kubernetes-aws-unw
 #versioning
@@ -34,7 +34,7 @@ kops create cluster \
 delete cluster :
 kops delete cluster --state=s3://kubernetes-aws-unw --yes --name k8.unw.aws.de.altemista.cloud
 
-------------- precondtions --------
+------------------------------ preconditions --------
 install kops:
 
 curl -LO https://github.com/kubernetes/kops/releases/download/1.7.0/kops-linux-amd64

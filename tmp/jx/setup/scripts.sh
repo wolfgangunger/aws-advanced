@@ -13,7 +13,7 @@ echo-export:
 	echo $$K8SCLUSTER_NAME
 
 #create s3-bucket: 
-create-s3-bucket version-s3-bucket list-s3-bucket
+#create-s3-bucket version-s3-bucket list-s3-bucket
 
 #create-s3-bucket:
 aws s3api create-bucket --bucket $$S3_BUCKET --region $$AWS_REGION --create-bucket-configuration LocationConstraint=$$AWS_REGION
@@ -26,3 +26,8 @@ aws s3api list-buckets  --query "Buckets[?Name=='$$S3_BUCKET'].Name | [0]" --out
 
 #create-aws-cluster:
 jx create cluster aws -n=$$K8SCLUSTER_NAME --zones us-west-2a --verbose
+
+# delete cluster
+$$K8SCLUSTER_NAME
+kops delete cluster --state=s3://kops-state-demo-jenkinsx-ungerw --yes --name ungerw-demo-jx-cluster
+kops delete cluster --state=s3://$$S3_BUCKET --yes --name $$K8SCLUSTER_NAME

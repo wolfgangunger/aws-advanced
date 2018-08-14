@@ -37,7 +37,7 @@ kops delete cluster --state=s3://kubernetes-aws-unw --yes --name k8.unw.aws.de.a
 ------------------------------ preconditions --------
 install kops:
 
-curl -LO https://github.com/kubernetes/kops/releases/download/1.7.0/kops-linux-amd64
+curl -LO https://github.com/kubernetes/kops/releases/download/1.9.2/kops-linux-amd64
 chmod +x kops-linux-amd64
 sudo mv ./kops-linux-amd64 /usr/local/bin/kops
 

@@ -51,7 +51,7 @@ Parameters:
     Service:
         Type: String
         Description: Ref to the service where the builded artifact would be deployed
-        Default: UngerwSpringBootService-Service-1J5TTIG1ESEHD
+        Default: UngerwServiceComplete-Service-1I21NO0BAHCJY
 
     Cluster:
         Type: String

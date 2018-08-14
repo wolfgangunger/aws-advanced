@@ -17,7 +17,7 @@ steps:
 
 ------------------------------- create k8 cluster --------------------------
 #create s3 bucket
-aws s3api create-bucket --bucket kubernetes-aws-unw
+aws s3api create-bucket --bucket kubernetes-aws-unw --region eu-west-1 --create-bucket-configuration LocationConstraint=eu-west-1
 #versioning
 aws s3api put-bucket-versioning --bucket kubernetes-aws-unw --versioning-configuration Status=Enabled
 

@@ -1,0 +1,35 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'API with CloudFormation by Wolfgang Unger'
+
+####################
+Parameters:
+
+   APIName:
+      Description: The name of the API 
+      Type: String
+      Default: MyAPI
+      
+     
+Resources:
+      
+ ############## methods ##############     
+  HealthRequestGET:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      Integration:
+        Type: HTTP
+        IntegrationHttpMethod: GET
+        Uri: 'http://www.google.de'
+
+        IntegrationResponses:
+          - StatusCode: 200
+      ResourceId:
+        Ref: HealthResource
+      RestApiId:
+        Ref: MyApi
+      MethodResponses:
+        - StatusCode: 200
+  

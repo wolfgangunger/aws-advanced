@@ -1,0 +1,463 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'API for Cognito Login by Wolfgang Unger'
+
+####################
+Parameters:
+#######cannot be created in this stack, needs be be created in advanced, since the confirmation needs about 1 day
+   CertificateArn:
+      Description: The ARN of the regional certification  
+      Type: String
+      Default:  arn:aws:acm:eu-central-1:016973021151:certificate/deccf42c-6d4a-415f-836e-f2817961d5a9
+
+   UserPoolId:
+      Description: The ID of the referenced User Pool 
+      Type: String
+      Default:  eu-central-1_C9SO0LAIk
+      
+   ClientId:
+      Description: The ID of the User Pool Client App
+      Type: String
+      Default:  7liqjgpl553nmnd7a7v2dpf0b8  
+      
+   ClientSecret:
+      Description: The secret of the User Pool Client App 
+      Type: String
+      Default:  4h34an7msd7d6h0o45pmf57qnqrc71at3a0ke2kkia6he14784m  
+      
+   CustomDomainName:
+      Description: The name of the custom domain
+      Type: String
+      Default: cf.api.aws.de.altemista.cloud       
+     
+Resources:
+ ############ Lambdas ###############
+  HealthLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+            ZipFile: >
+                def lambda_handler(event, context):
+                return 'API available'
+      Description: A hello function
+      FunctionName: HealthLambda
+      Handler: index.lambda_handler
+      Role:
+        'Fn::GetAtt':
+          - LambdaExecutionRole
+          - Arn
+      Runtime: python2.7
+      
+  PreSigninLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+            ZipFile: >
+                import base64
+                
+                def lambda_handler(event, context):
+                    event['response'] = {
+                    "autoConfirmUser": True
+                    }
+                    return event
+      Description: preSignin for Cognito
+      FunctionName: PreSigninLambda
+      Handler: index.lambda_handler
+      Role:
+        'Fn::GetAtt':
+          - LambdaExecutionRole
+          - Arn
+      Runtime: python2.7      
+
+  LoginLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+            ZipFile: !Sub |
+                    from __future__ import print_function
+                    import boto3                
+                    import botocore.exceptions  
+                    import hmac
+                    import hashlib
+                    import base64
+                    import json
+                    import uuid
+                    USER_POOL_ID = '${UserPoolId}'
+                    CLIENT_ID = '${ClientId}'
+                    CLIENT_SECRET = '${ClientSecret}'
+                    client = None                    
+                    def get_secret_hash(username):
+                        msg = username + CLIENT_ID
+                        dig = hmac.new(str(CLIENT_SECRET).encode('utf-8'), 
+                        msg = str(msg).encode('utf-8'), digestmod=hashlib.sha256).digest()
+                        d2 = base64.b64encode(dig).decode()
+                        return d2
+                    ERROR = 0
+                    SUCCESS = 1
+                    USER_EXISTS = 2                    
+                    def initiate_auth(username, password):
+                        try:
+                            resp = client.admin_initiate_auth(
+                            UserPoolId=USER_POOL_ID,
+                            ClientId=CLIENT_ID,
+                            AuthFlow='ADMIN_NO_SRP_AUTH',
+                            AuthParameters={
+                                'USERNAME': username,
+                                'SECRET_HASH': get_secret_hash(username),
+                                'PASSWORD': password
+                                },
+                            ClientMetadata={
+                                'username': username,
+                                'password': password
+                                })
+                        except client.exceptions.NotAuthorizedException as e:
+                            return None, "The username or password is incorrect"
+                        except Exception as e:
+                            print(e)
+                            return None, "Unknown error"
+                        return resp, None
+                    def lambda_handler(event, context):
+                        global client
+                        if client == None:
+                            client = boto3.client('cognito-idp')
+                     
+                        print(event)
+                        body = event
+                        username = body['username']
+                        password = body['password']
+                        is_new = "false"
+                        user_id = str(uuid.uuid4())
+                        resp, msg = initiate_auth(username, password)
+                        if msg != None:
+                            return {'status': 'fail', 'msg': msg}
+                        id_token = resp['AuthenticationResult']['IdToken']
+                        print('id token: ' + id_token)
+                        return {'status': 'success', 'id_token': id_token, 'user_id': user_id, 'is_new': is_new}    
+      Description: login function for cognito ; returning the access token
+      FunctionName: LoginLambda
+      Handler: index.lambda_handler
+      Role:
+        'Fn::GetAtt':
+          - LambdaExecutionRole
+          - Arn
+      Runtime: python2.7
+      
+  LambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies: 
+            - PolicyName: Cognito
+              PolicyDocument: 
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [{
+                                "Effect": "Allow",
+                                "Action": [
+                                    "cognito-identity:*",
+                                    "cognito-idp:*",
+                                    "cognito-sync:*",
+                                    "iam:ListRoles",
+                                    "iam:ListOpenIdConnectProviders",
+                                    "sns:ListPlatformApplications"
+                                ],
+                                "Resource": "*"
+                        }]
+                    }
+  ############## API ##########
+  CognitoAuthApi:
+    Type: 'AWS::ApiGateway::RestApi'
+    Properties:
+      Name: Cognito Auth API
+      Description: API used for cognito auth requests
+      FailOnWarnings: true
+      
+  ### permissions
+  LambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:invokeFunction'
+      FunctionName:
+        'Fn::GetAtt':
+          - HealthLambda
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        'Fn::Join':
+          - ''
+          - - 'arn:aws:execute-api:'
+            - Ref: 'AWS::Region'
+            - ':'
+            - Ref: 'AWS::AccountId'
+            - ':'
+            - Ref: CognitoAuthApi
+            - /*
+            
+  LambdaPermissionPreSignin:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:invokeFunction'
+      FunctionName:
+        'Fn::GetAtt':
+          - PreSigninLambda
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        'Fn::Join':
+          - ''
+          - - 'arn:aws:execute-api:'
+            - Ref: 'AWS::Region'
+            - ':'
+            - Ref: 'AWS::AccountId'
+            - ':'
+            - Ref: CognitoAuthApi
+            - /*
+
+  LambdaPermissionLogin:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:invokeFunction'
+      FunctionName:
+        'Fn::GetAtt':
+          - LoginLambda
+          - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        'Fn::Join':
+          - ''
+          - - 'arn:aws:execute-api:'
+            - Ref: 'AWS::Region'
+            - ':'
+            - Ref: 'AWS::AccountId'
+            - ':'
+            - Ref: CognitoAuthApi
+            - /*
+#############            
+  ApiGatewayCloudWatchLogsRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: ApiGatewayLogsPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:DescribeLogGroups'
+                  - 'logs:DescribeLogStreams'
+                  - 'logs:PutLogEvents'
+                  - 'logs:GetLogEvents'
+                  - 'logs:FilterLogEvents'
+                Resource: '*'
+  
+  ApiGatewayAccount:
+    Type: 'AWS::ApiGateway::Account'
+    Properties:
+      CloudWatchRoleArn:
+        'Fn::GetAtt':
+          - ApiGatewayCloudWatchLogsRole
+          - Arn
+  
+
+  ############# rest resources #############
+  HealthResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId:
+        Ref: CognitoAuthApi
+      ParentId:
+        'Fn::GetAtt':
+          - CognitoAuthApi
+          - RootResourceId
+      PathPart: health
+
+  LoginResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId:
+        Ref: CognitoAuthApi
+      ParentId:
+        'Fn::GetAtt':
+          - CognitoAuthApi
+          - RootResourceId
+      PathPart: login
+
+  PreSigninResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId:
+        Ref: CognitoAuthApi
+      ParentId:
+        'Fn::GetAtt':
+          - CognitoAuthApi
+          - RootResourceId
+      PathPart: preSignin
+      
+ ############## methods ##############     
+  HealthRequestGET:
+    DependsOn: LambdaPermission
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      Integration:
+        Type: AWS
+        IntegrationHttpMethod: POST
+        Uri:
+          'Fn::Join':
+            - ''
+            - - 'arn:aws:apigateway:'
+              - Ref: 'AWS::Region'
+              - ':lambda:path/2015-03-31/functions/'
+              - 'Fn::GetAtt':
+                  - HealthLambda
+                  - Arn
+              - /invocations
+        IntegrationResponses:
+          - StatusCode: 200
+      ResourceId:
+        Ref: HealthResource
+      RestApiId:
+        Ref: CognitoAuthApi
+      MethodResponses:
+        - StatusCode: 200
+  
+  LoginRequestPOST:
+    DependsOn: LambdaPermission
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      Integration:
+        Type: AWS
+        IntegrationHttpMethod: POST
+        Uri:
+          'Fn::Join':
+            - ''
+            - - 'arn:aws:apigateway:'
+              - Ref: 'AWS::Region'
+              - ':lambda:path/2015-03-31/functions/'
+              - 'Fn::GetAtt':
+                  - LoginLambda
+                  - Arn
+              - /invocations
+        IntegrationResponses:
+          - StatusCode: 200
+      ResourceId:
+        Ref: LoginResource
+      RestApiId:
+        Ref: CognitoAuthApi
+      MethodResponses:
+        - StatusCode: 200
+
+  PreSigninRequestPOST:
+    DependsOn: LambdaPermission
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      Integration:
+        Type: AWS
+        IntegrationHttpMethod: POST
+        Uri:
+          'Fn::Join':
+            - ''
+            - - 'arn:aws:apigateway:'
+              - Ref: 'AWS::Region'
+              - ':lambda:path/2015-03-31/functions/'
+              - 'Fn::GetAtt':
+                  - PreSigninLambda
+                  - Arn
+              - /invocations
+        IntegrationResponses:
+          - StatusCode: 200
+      ResourceId:
+        Ref: PreSigninResource
+      RestApiId:
+        Ref: CognitoAuthApi
+      MethodResponses:
+        - StatusCode: 200        
+#### stage & deployment
+  CognitoAuthApiStage:
+    DependsOn:
+      - ApiGatewayAccount
+    Type: 'AWS::ApiGateway::Stage'
+    Properties:
+      DeploymentId:
+        Ref: ApiDeployment
+      MethodSettings:
+        - DataTraceEnabled: true
+          HttpMethod: '*'
+          LoggingLevel: INFO
+          ResourcePath: /*
+      RestApiId:
+        Ref: CognitoAuthApi
+      StageName: TEST
+      Variables:
+        Tom: Maslen-v4
+  
+  ApiDeployment:
+    Type: 'AWS::ApiGateway::Deployment'
+    DependsOn:
+      - HealthRequestGET
+      - PreSigninRequestPOST
+      - LoginRequestPOST
+    Properties:
+      RestApiId:
+        Ref: CognitoAuthApi
+      StageName: DEV    
+##########custom domains #####
+  CustomDomain:    
+    Type: "AWS::ApiGateway::DomainName"
+    Properties: 
+        #CertificateArn: String
+        DomainName: !Ref CustomDomainName
+        EndpointConfiguration: 
+              Types:
+                - REGIONAL
+        RegionalCertificateArn: !Ref CertificateArn
+  
+  CustomDomainMapping:
+    Type: 'AWS::ApiGateway::BasePathMapping'
+    DependsOn: ApiDeployment
+    Properties:
+      BasePath: ''
+      DomainName: !Ref CustomDomainName
+      RestApiId: !Ref CognitoAuthApi
+      Stage: DEV
+     
+
+############################################        
+Outputs:
+    
+  RootUrl:
+    Description: Root URL of the API gateway
+    Value:
+      'Fn::Join':
+        - ''
+        - - 'https://'
+          - Ref: CognitoAuthApi
+          - .execute-api.
+          - Ref: 'AWS::Region'
+          - .amazonaws.com

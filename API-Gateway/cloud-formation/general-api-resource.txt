@@ -1,0 +1,26 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'API Resource with CloudFormation by Wolfgang Unger'
+####################
+Parameters:
+   APIName:
+      Description: The name of the API 
+      Type: String
+      Default: MyAPI
+      
+   ResourceName:
+      Description: The name of the resource
+      Type: String
+      Default: myresource      
+     
+Resources:
+  ############# rest resources #############
+  HealthResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId: !ImportValue API
+      ParentId:
+        'Fn::GetAtt':
+          - !ImportValue API
+          - RootResourceId
+      PathPart: !Ref ResourceName

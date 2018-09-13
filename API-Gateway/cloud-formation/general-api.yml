@@ -1,0 +1,166 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'API with CloudFormation by Wolfgang Unger'
+
+####################
+Parameters:
+#######cannot be created in this stack, needs be be created in advanced, since the confirmation needs about 1 day
+   CertificateArn:
+      Description: The ARN of the regional certification  
+      Type: String
+      Default:  arn:aws:acm:eu-central-1:016973021151:certificate/deccf42c-6d4a-415f-836e-f2817961d5a9
+
+   APIName:
+      Description: The name of the API 
+      Type: String
+      Default: MyAPI
+      
+   
+   CustomDomainName:
+      Description: The name of the custom domain for the API 
+      Type: String
+      Default: test.api.aws.de.altemista.cloud       
+     
+Resources:
+  ############## API ##########
+  MyApi:
+    Type: 'AWS::ApiGateway::RestApi'
+    Properties:
+      Name: !Ref APIName
+      Description: API created by CloudFormation
+      FailOnWarnings: true
+      
+#############            
+  ApiGatewayCloudWatchLogsRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: ApiGatewayLogsPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:DescribeLogGroups'
+                  - 'logs:DescribeLogStreams'
+                  - 'logs:PutLogEvents'
+                  - 'logs:GetLogEvents'
+                  - 'logs:FilterLogEvents'
+                Resource: '*'
+  
+  ApiGatewayAccount:
+    Type: 'AWS::ApiGateway::Account'
+    Properties:
+      CloudWatchRoleArn:
+        'Fn::GetAtt':
+          - ApiGatewayCloudWatchLogsRole
+          - Arn
+  
+
+  ############# rest resources #############
+  HealthResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId:
+        Ref: MyApi
+      ParentId:
+        'Fn::GetAtt':
+          - MyApi
+          - RootResourceId
+      PathPart: health
+      
+ ############## methods ##############     
+  HealthRequestGET:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      Integration:
+        Type: HTTP
+        IntegrationHttpMethod: GET
+        Uri: 'http://www.google.de'
+
+        IntegrationResponses:
+          - StatusCode: 200
+      ResourceId:
+        Ref: HealthResource
+      RestApiId:
+        Ref: MyApi
+      MethodResponses:
+        - StatusCode: 200
+  
+#### stage & deployment
+  MyApiStage:
+    DependsOn:
+      - ApiGatewayAccount
+    Type: 'AWS::ApiGateway::Stage'
+    Properties:
+      DeploymentId:
+        Ref: ApiDeployment
+      MethodSettings:
+        - DataTraceEnabled: true
+          HttpMethod: '*'
+          LoggingLevel: INFO
+          ResourcePath: /*
+      RestApiId:
+        Ref: MyApi
+      StageName: TEST
+      Variables:
+        Tom: Maslen-v4
+  
+  ApiDeployment:
+    Type: 'AWS::ApiGateway::Deployment'
+    DependsOn:
+      - HealthRequestGET
+    Properties:
+      RestApiId:
+        Ref: MyApi
+      StageName: DEV    
+##########custom domains #####
+  CustomDomain:    
+    Type: "AWS::ApiGateway::DomainName"
+    Properties: 
+        DomainName: !Ref CustomDomainName
+        EndpointConfiguration: 
+              Types:
+                - REGIONAL
+        RegionalCertificateArn: !Ref CertificateArn
+  
+  CustomDomainMapping:
+    Type: 'AWS::ApiGateway::BasePathMapping'
+    DependsOn: ApiDeployment
+    Properties:
+      BasePath: ''
+      DomainName: !Ref CustomDomain
+      RestApiId: !Ref MyApi
+      Stage: DEV
+     
+
+############################################        
+Outputs:
+    
+  API:
+    Description: The created ApiDeployment
+    Value: !Ref MyApi
+    
+  RootUrl:
+    Description: Root URL of the API gateway
+    Value:
+      'Fn::Join':
+        - ''
+        - - 'https://'
+          - Ref: MyApi
+          - .execute-api.
+          - Ref: 'AWS::Region'
+          - .amazonaws.com

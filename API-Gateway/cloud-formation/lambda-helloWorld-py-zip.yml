@@ -1,0 +1,21 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Lambda Function from Cloud Formation by Wolfgang Unger - Code in S3 ZipFile'
+
+Resources:
+  Lambda1:
+    Type: "AWS::Lambda::Function"
+    Properties: 
+        Code:
+            S3Bucket: "ungerw-lambda-code"
+            S3Key: "hello_lambda.zip"
+        #Code:
+        #    ZipFile: >
+        #        def lambda_handler(event, context):
+        #        return 'Hello from Lambda'
+        Description: Test with Cloud Formation
+        FunctionName: HelloWorldZipPyByCF
+        Handler: lambda_function.lambda_handler
+        Role: arn:aws:iam::016973021151:role/service-role/LambdaRole
+        Runtime: python2.7
+

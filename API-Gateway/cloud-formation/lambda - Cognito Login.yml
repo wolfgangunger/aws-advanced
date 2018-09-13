@@ -1,0 +1,99 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Cognito Login Lambda'
+
+Parameters:
+ LambdaRoleArn:
+  Description: The role arn to execute the lambda_function
+  Type: String
+  Default: arn:aws:iam::016973021151:role/service-role/LambdaRole
+
+Resources:
+  Lambda1:
+    Type: "AWS::Lambda::Function"
+    Properties: 
+        Code:
+            ZipFile: >
+                from __future__ import print_function
+                
+                import boto3
+                
+                import botocore.exceptions
+                
+                import hmac
+                
+                import hashlib
+                
+                import base64
+                
+                import json
+                
+                import uuid
+                
+                
+                USER_POOL_ID = 'eu-central-1_C9SO0LAIk'
+                
+                CLIENT_ID = '7liqjgpl553nmnd7a7v2dpf0b8'
+                
+                CLIENT_SECRET = '4h34an7msd7d6h0o45pmf57qnqrc71at3a0ke2kkia6he14784m'
+                
+                client = None
+                
+                def get_secret_hash(username):
+                    msg = username + CLIENT_ID
+                    dig = hmac.new(str(CLIENT_SECRET).encode('utf-8'), 
+                    msg = str(msg).encode('utf-8'), digestmod=hashlib.sha256).digest()
+                    d2 = base64.b64encode(dig).decode()
+                    return d2
+                    
+                ERROR = 0
+                
+                SUCCESS = 1
+                
+                USER_EXISTS = 2
+                    
+                def initiate_auth(username, password):
+                    try:
+                        resp = client.admin_initiate_auth(
+                        UserPoolId=USER_POOL_ID,
+                        ClientId=CLIENT_ID,
+                        AuthFlow='ADMIN_NO_SRP_AUTH',
+                        AuthParameters={
+                            'USERNAME': username,
+                            'SECRET_HASH': get_secret_hash(username),
+                            'PASSWORD': password
+                            },
+                        ClientMetadata={
+                            'username': username,
+                            'password': password
+                            })
+                    except client.exceptions.NotAuthorizedException as e:
+                        return None, "The username or password is incorrect"
+                    except Exception as e:
+                        print(e)
+                        return None, "Unknown error"
+                    return resp, None
+                
+                def lambda_handler(event, context):
+                    global client
+                    if client == None:
+                        client = boto3.client('cognito-idp')
+                        
+                    print(event)
+                    body = event
+                    username = body['username']
+                    password = body['password']
+                    is_new = "false"
+                    user_id = str(uuid.uuid4())
+                    resp, msg = initiate_auth(username, password)
+                    if msg != None:
+                        return {'status': 'fail', 'msg': msg}
+                    id_token = resp['AuthenticationResult']['IdToken']
+                    print('id token: ' + id_token)
+                    return {'status': 'success', 'id_token': id_token, 'user_id': user_id, 'is_new': is_new}
+        Description: Cognito Login Script
+        FunctionName: CognitoLoginCF 
+        Handler: index.lambda_handler
+        Role: !Ref LambdaRoleArn
+        Runtime: python2.7
+

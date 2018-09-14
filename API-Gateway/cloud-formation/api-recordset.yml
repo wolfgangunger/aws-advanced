@@ -1,0 +1,32 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'R53 RecordSet for Auth-API by Wolfgang Unger'
+
+####################
+Parameters:
+   HostedZone:
+      Description: the hosted zone domain name
+      Type: String
+      Default: aws.de.altemista.cloud.
+
+   CustomDomainName:
+      Description: the complete custom domain name
+      Type: String
+      Default: gen.api.aws.de.altemista.cloud.
+
+   CustomDomainTargetDomain:
+      Description: the target domain name of the endpoint configuration
+      Type: String
+      Default: d-t0561kdhe2.execute-api.eu-central-1.amazonaws.com  
+
+Resources:
+
+  CustomDomainMappingRecordSet:    
+     Type: "AWS::Route53::RecordSet"
+     Properties: 
+        HostedZoneName: !Ref HostedZone
+        Name: !Ref CustomDomainName
+        Type: CNAME
+        ResourceRecords:
+            - !Ref CustomDomainTargetDomain
+        TTL: 300  

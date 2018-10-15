@@ -8,7 +8,7 @@ Parameters:
    CertificateArn:
       Description: The ARN of the regional certification  
       Type: String
-      Default:  arn:aws:acm:eu-central-1:016973021151:certificate/deccf42c-6d4a-415f-836e-f2817961d5a9
+      Default:   arn:aws:acm:eu-central-1:039735417706:certificate/23b2e969-d667-44ed-a586-a15ee73d8aab
 
    UserPoolId:
       Description: The ID of the referenced User Pool 

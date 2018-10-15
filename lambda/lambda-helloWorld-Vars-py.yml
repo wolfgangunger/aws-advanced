@@ -1,0 +1,25 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Lambda Function from Cloud Formation by Wolfgang Unger'
+
+Parameters:
+   HelloString:
+      Description: the string to be returned 
+      Type: String
+      Default: Hello AWS Friends
+
+Resources:
+  Lambda1:
+    Type: "AWS::Lambda::Function"
+    Properties: 
+        Code:
+            ZipFile: !Sub |
+                    def lambda_handler(event, context):
+                        return '${HelloString}'
+        Description: Test with Cloud Formation
+        FunctionName: HelloWorldPyVarsByCF
+        Handler: index.lambda_handler
+        ## enter your role arn here
+        Role: arn:aws:iam::01.....
+        Runtime: python2.7
+

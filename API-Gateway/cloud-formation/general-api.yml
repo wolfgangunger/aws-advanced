@@ -8,7 +8,7 @@ Parameters:
    CertificateArn:
       Description: The ARN of the regional certification  
       Type: String
-      Default:  arn:aws:acm:eu-central-1:016973021151:certificate/deccf42c-6d4a-415f-836e-f2817961d5a9
+      Default:   arn:aws:acm:eu-central-1:039735417706:certificate/a1d6c45c-41aa-4a7c-b15e-52dbbb491fef
 
    APIName:
       Description: The name of the API 
@@ -19,7 +19,7 @@ Parameters:
    CustomDomainName:
       Description: The name of the custom domain for the API 
       Type: String
-      Default: test.api.aws.de.altemista.cloud       
+      Default: api.sccbrasil.com      
      
 Resources:
   ############## API ##########
@@ -69,7 +69,7 @@ Resources:
   
 
   ############# rest resources #############
-  HealthResource:
+  Level0Resource:
     Type: 'AWS::ApiGateway::Resource'
     Properties:
       RestApiId:
@@ -78,7 +78,31 @@ Resources:
         'Fn::GetAtt':
           - MyApi
           - RootResourceId
+      PathPart: apidomain
+      
+  Level1Resource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId:
+        Ref: MyApi
+      ParentId: !Ref Level0Resource
+      PathPart: v1  
+      
+  HealthResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId:
+        Ref: MyApi
+      ParentId: !Ref Level1Resource
       PathPart: health
+
+  PetsResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      RestApiId:
+        Ref: MyApi
+      ParentId: !Ref Level1Resource
+      PathPart: pets      
       
  ############## methods ##############     
   HealthRequestGET:
@@ -99,15 +123,142 @@ Resources:
         Ref: MyApi
       MethodResponses:
         - StatusCode: 200
-  
+        
+  PetsRequestGET:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      RequestParameters:
+        #method.request.header.Authorization: true
+        method.request.querystring.type: true
+        method.request.querystring.page : true      
+      Integration:
+        Type: HTTP
+        IntegrationHttpMethod: GET
+        Uri: 'http://petstore-demo-endpoint.execute-api.com/petstore/pets'
+        ## you can use stage variables like this:
+        #Uri: 'http://${stageVariables.Domain}/petstore/pets'
+        IntegrationResponses:
+          - StatusCode: 200
+        RequestParameters:
+           #integration.request.header.Authorization: method.request.header.Authorization  
+           integration.request.querystring.type: method.request.querystring.type               
+           integration.request.querystring.page: method.request.querystring.page   
+      ResourceId:
+        Ref: PetsResource
+      RestApiId:
+        Ref: MyApi
+      MethodResponses:
+        - StatusCode: 200  
+          ResponseModels: { "application/json" : Pet }
+
+  PetsRequestPOST:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      #RequestParameters:
+        #method.request.header.Authorization: true   
+      RequestModels: { "application/json" :  NewPet }  
+                 
+      Integration:
+        Type: HTTP
+        IntegrationHttpMethod: POST
+        Uri: 'http://petstore-demo-endpoint.execute-api.com/petstore/pets'
+        IntegrationResponses:
+          - StatusCode: 200
+        #RequestParameters:
+           #integration.request.header.Authorization: method.request.header.Authorization    
+      ResourceId:
+        Ref: PetsResource
+      RestApiId:
+        Ref: MyApi
+      MethodResponses:
+        - StatusCode: 200  
+          ResponseModels: { "application/json" : NewPet }            
+
+            ############## models ############
+  NewPet: 
+    Type: AWS::ApiGateway::Model
+    DependsOn: PetType
+    Properties: 
+      RestApiId: 
+        Ref: MyApi
+      ContentType: "application/json"
+      Description: NewPet Model 
+      Name: NewPet
+      Schema: 
+        "$schema": "http://json-schema.org/draft-04/schema#" 
+        title: NewPet
+        type: array
+        items:   
+            type: object
+            properties:
+                type:
+                   # $ref: '#/definitions/PetType'
+                   $ref: !Join  
+                        - ''
+                        - - 'https://apigateway.amazonaws.com/restapis/'
+                          - !Ref MyApi
+                          - /models/
+                          - !Ref PetType
+                price:
+                    type: number
+
+  Pet: 
+    Type: AWS::ApiGateway::Model
+    Properties: 
+      RestApiId: 
+        Ref: MyApi
+      ContentType: "application/json"
+      Description: Pet Model 
+      Name: Pet
+      Schema: 
+        "$schema": "http://json-schema.org/draft-04/schema#" 
+        title: Pet
+        type: array
+        items:   
+            type: object
+            properties:
+                id:
+                    type: string
+                type:
+                    type: string
+                price:
+                    type: number
+                    
+                    
+  PetType: 
+    Type: AWS::ApiGateway::Model
+    Properties: 
+      RestApiId: 
+        Ref: MyApi
+      ContentType: "application/json"
+      Description: PetType Model 
+      Name: PetType
+      Schema: 
+        "$schema": "http://json-schema.org/draft-04/schema#" 
+        title: PetType
+        type: array
+        items:                       
+            type: string
+            enum:
+                - dog
+                - cat
+                - fish
+                - bird
+                - gecko
+        
 #### stage & deployment
-  MyApiStage:
+    #### stage & deployment ###############
+  MyApiStageINT:
     DependsOn:
       - ApiGatewayAccount
     Type: 'AWS::ApiGateway::Stage'
     Properties:
       DeploymentId:
-        Ref: ApiDeployment
+        Ref: ApiDeploymentINT
       MethodSettings:
         - DataTraceEnabled: true
           HttpMethod: '*'
@@ -115,18 +266,43 @@ Resources:
           ResourcePath: /*
       RestApiId:
         Ref: MyApi
-      StageName: TEST
+      StageName: INT
       Variables:
-        Tom: Maslen-v4
+        Domain: 'my.int.domain'
+
+  MyApiStageDEV:
+    DependsOn:
+      - ApiGatewayAccount
+    Type: 'AWS::ApiGateway::Stage'
+    Properties:
+      DeploymentId:
+        Ref: ApiDeploymentDEV
+      MethodSettings:
+        - DataTraceEnabled: true
+          HttpMethod: '*'
+          LoggingLevel: INFO
+          ResourcePath: /*
+      RestApiId:
+        Ref: MyApi
+      StageName: DEV
+      Variables:
+        Domain: 'my.dev.domain'      
   
-  ApiDeployment:
+  ApiDeploymentDEV:
     Type: 'AWS::ApiGateway::Deployment'
     DependsOn:
       - HealthRequestGET
     Properties:
       RestApiId:
         Ref: MyApi
-      StageName: DEV    
+      
+  ApiDeploymentINT:
+    Type: 'AWS::ApiGateway::Deployment'
+    DependsOn:
+      - HealthRequestGET
+    Properties:
+      RestApiId:
+        Ref: MyApi
 ##########custom domains #####
   CustomDomain:    
     Type: "AWS::ApiGateway::DomainName"
@@ -139,12 +315,12 @@ Resources:
   
   CustomDomainMapping:
     Type: 'AWS::ApiGateway::BasePathMapping'
-    DependsOn: ApiDeployment
+    DependsOn: ApiDeploymentINT
     Properties:
       BasePath: ''
       DomainName: !Ref CustomDomain
       RestApiId: !Ref MyApi
-      Stage: DEV
+      Stage: !Ref MyApiStageINT
      
 
 ############################################        

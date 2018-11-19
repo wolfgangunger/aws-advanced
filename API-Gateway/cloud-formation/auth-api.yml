@@ -8,27 +8,27 @@ Parameters:
    CertificateArn:
       Description: The ARN of the regional certification  
       Type: String
-      Default:   arn:aws:acm:eu-central-1:039735417706:certificate/23b2e969-d667-44ed-a586-a15ee73d8aab
+      #Default:  
 
    UserPoolId:
       Description: The ID of the referenced User Pool 
       Type: String
-      Default:  eu-central-1_C9SO0LAIk
+
       
    ClientId:
       Description: The ID of the User Pool Client App
       Type: String
-      Default:  7liqjgpl553nmnd7a7v2dpf0b8  
+
       
    ClientSecret:
       Description: The secret of the User Pool Client App 
       Type: String
-      Default:  4h34an7msd7d6h0o45pmf57qnqrc71at3a0ke2kkia6he14784m  
+      NoEcho: true
       
    CustomDomainName:
       Description: The name of the custom domain
       Type: String
-      Default: cf.api.aws.de.altemista.cloud       
+      Default: auth.api.sccbrasil.com       
      
 Resources:
  ############ Lambdas ###############

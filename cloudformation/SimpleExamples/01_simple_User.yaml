@@ -10,7 +10,7 @@ Resources:
         UserName: Jenkins    
         Path: "/"
         LoginProfile:
-            Password: jenkins12345        
+            Password: jenKins12345!        
         Policies:
             - PolicyName: AmazonSSMFullAccess
               PolicyDocument:

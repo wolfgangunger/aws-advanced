@@ -8,7 +8,7 @@ Parameters:
    CertificateArn:
       Description: The ARN of the regional certification  
       Type: String
-      Default:   arn:aws:acm:eu-central-1:039735417706:certificate/a1d6c45c-41aa-4a7c-b15e-52dbbb491fef
+      Default:    arn:aws:acm:eu-central-1:039735417706:certificate/6e688811-3ec4-4e55-8669-e50be1e9a865
 
    APIName:
       Description: The name of the API 

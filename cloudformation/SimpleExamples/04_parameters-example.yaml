@@ -7,7 +7,7 @@ Parameters:
   ImageId:
     Description: Name of the EC2 Image 
     Type: String
-    Default:  ami-e0ba5c83
+    Default:  ami-030aae8cba933aede
     
   ContainterName:
     Description: Name of the Container(Simple parameter)

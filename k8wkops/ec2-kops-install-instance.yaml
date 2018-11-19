@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  AWS CloudFormation Template for kops control instance and to install k8 cluster. by w.r.unger 21.10.2018
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    Default: DBS-AWS-NV
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+    
+  ClusterName:
+    Description : the name of the k8 cluster 
+    Type : String
+    Default: k8.unw.nv.aws.de.altemista.cloud
+    
+  S3BucketName:
+    Description : The name of the S3 Bucket for the kops data
+    Type : String
+    Default: ungerw-kops-bucket-nv-3
+    
+  AWSAccessKey:
+    Description : The aws access key for the kops user
+    Type : String
+    Default: AKIAJGT3W6EIPLKE5NHA  
+    
+  AWSAccessSecret:
+    Description : The aws access key for the kops user
+    Type : String    
+    
+  DefaultRegion:
+    Description : The region for the cluster
+    Type : String
+    Default: us-east-1     
+    
+  InstanceType:
+    Description: Kops Machine EC2 instance type
+    Type: String
+    Default: t2.small
+    AllowedValues:
+      - t1.micro
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - m1.small
+      - m1.medium
+    ConstraintDescription: must be a valid EC2 instance type.
+  
+  AMI:
+    Description: the machine image
+    Type: String
+    Default: ami-0922553b7b0369273
+
+    
+##### mapping for AMIs should be done #########
+    
+ #################### resources ##############
+Resources:
+  ServerInstance:
+    Type: 'AWS::EC2::Instance'                 
+    Properties:
+      ImageId: !Ref AMI
+      InstanceType: !Ref InstanceType
+      SecurityGroups:
+        - !Ref InstanceSecurityGroup
+      KeyName: !Ref KeyName
+      Tags:
+        -
+         Key: Name
+         Value: EC2-Kops-Install-Instance
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash 
+            echo ">>>>>>>>>>>>> prepare AWS <<<<<<<<<<<<<"
+            cd /home/ec2-user
+            mkdir .aws
+            cd .aws
+            cat << EOF > credentials
+            [default]
+            aws_access_key_id = ${AWSAccessKey}
+            aws_secret_access_key = ${AWSAccessSecret}
+            EOF
+            cat << EOF > config
+            [default]
+            output = json
+            region = ${DefaultRegion}
+            EOF
+            cd /home/ec2-user
+            echo ">>>>>>>>>>>>> install kops <<<<<<<<<<<<<"
+            curl -LO https://github.com/kubernetes/kops/releases/download/1.9.2/kops-linux-amd64
+            chmod +x kops-linux-amd64
+            sudo mv ./kops-linux-amd64 /usr/local/bin/kops
+            export KOPS_STATE_STORE=s3://'${S3BucketName}'
+            echo $KOPS_STATE_STORE
+            echo ">>>>>>>>>>>>> get ssh key <<<<<<<<<<<<<"
+            cd /home/ec2-user/.ssh 
+            wget https://s3.amazonaws.com/ungerw-kops-public-bucket/id_rsa
+            wget https://s3.amazonaws.com/ungerw-kops-public-bucket/id_rsa.pub
+            echo ">>>>>>>>>>>>> create cluster script <<<<<<<<<<<<<"
+            cd /home/ec2-user
+            cat << EOF > createCluster.sh
+            aws s3api create-bucket --bucket ${S3BucketName} --region ${DefaultRegion} --create-bucket-configuration LocationConstraint=eu-west-1
+            aws s3api put-bucket-versioning --bucket ${S3BucketName} --versioning-configuration Status=Enabled
+            export KOPS_STATE_STORE=s3://${S3BucketName}
+            kops create cluster --name ${ClusterName} --zones ${DefaultRegion}a --state s3://${S3BucketName} --yes          
+            EOF
+            chmod +x createCluster.sh
+            cat << EOF > readme
+            execute aws configure and 
+            execute createCluster.sh to install cluster
+            EOF
+            echo ">>>>>>>>>>>>> Setup complete <<<<<<<<<<<<<"
+          
+  #export KOPS_STATE_STORE=s3://ungerw-kops-bucket-nv-1            
+  #kops create cluster --name k8.unw.nv.aws.de.altemista.cloud --zones us-east-1a --state s3://ungerw-kops-bucket-nv-1 --yes   
+  #kops delete cluster --state=s3://${S3BucketName} --yes --name ${ClusterName}   
+  
+  InstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable HTTP access via port 80 and SSH
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+

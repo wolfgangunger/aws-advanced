@@ -1,3 +1,5 @@
+
+
 github:
 https://github.com/wolfgangunger/aws-advanced
 https://github.com/wolfgangunger/aws-advanced/tree/master/k8wkops
@@ -22,10 +24,11 @@ aws s3api create-bucket --bucket kubernetes-aws-unw --region eu-west-1 --create-
 aws s3api put-bucket-versioning --bucket kubernetes-aws-unw --versioning-configuration Status=Enabled
 
 export KOPS_STATE_STORE=s3://kubernetes-aws-unw
+export KOPS_STATE_STORE=s3://ungerw-kops-public-bucket
 
 kops create cluster \
---name k8.unw.aws.de.altemista.cloud \
---zones us-west-2a \
+--name k8.unw.nv.aws.de.altemista.cloud \
+--zones us-east-1a \
 --state s3://kubernetes-aws-unw \
 --yes
 
@@ -34,6 +37,11 @@ kops create cluster \
 delete cluster :
 kops delete cluster --state=s3://kubernetes-aws-unw --yes --name k8.unw.aws.de.altemista.cloud
 
+
+         cat << EOF > deleteCluster.sh
+            kops delete cluster --state=s3://${S3BucketName} --yes --name ${ClusterName}            
+            EOF           
+            chmod +x deleteCluster.sh
 ------------------------------ preconditions --------
 install kops:
 
@@ -44,3 +52,9 @@ sudo mv ./kops-linux-amd64 /usr/local/bin/kops
 create ssh public key:
 ssh-keygen -t rsa -b 4096 -C <mail>
 kops create secret --name k8.unw.aws.de.altemista.cloud sshpublickey admin -i ~/.ssh/id_rsa.pub
+kops create secret --name k8.unw.nv.aws.de.altemista.cloud sshpublickey admin -i ~/.ssh/kopskey.pub
+
+wget https://s3.amazonaws.com/ungerw-kops-public-bucket/kopskey
+wget https://s3.amazonaws.com/ungerw-kops-public-bucket/kopskey.pub
+wget https://s3.amazonaws.com/ungerw-kops-public-bucket/id_rsa
+wget https://s3.amazonaws.com/ungerw-kops-public-bucket/id_rsa.pub

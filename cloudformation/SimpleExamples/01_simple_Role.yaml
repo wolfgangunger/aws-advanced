@@ -1,0 +1,42 @@
+
+Description: >
+    Role Resource example
+#  by wolfgang unger 9.12.2018
+
+Resources:
+  JenkinsRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+        RoleName: JenkinsRole    
+        Path: "/"    
+        AssumeRolePolicyDocument: 
+          Version: "2012-10-17"
+          Statement: 
+            - 
+              Effect: "Allow"
+              Principal: 
+                Service: 
+                  - "ec2.amazonaws.com"
+              Action: 
+                  - "sts:AssumeRole" 
+        Policies:
+            - PolicyName: AmazonSSMFullAccess
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                  - Effect: Allow
+                    Action:
+                        - 'cloudwatch:PutMetricData'
+                        - 'ds:CreateComputer'
+                        - 'ds:DescribeDirectories'
+                        - 'ec2:DescribeInstanceStatus'
+                        - 'logs:*'
+                        - 'ssm:*'
+                        - 'ec2messages:*'
+                    Resource: '*'
+
+
+
+
+
+

@@ -22,9 +22,8 @@ Parameters:
         Default: 2
 
     Listener:
-        Description: The Application Load Balancer listener to register with
+        Description: The Application Load Balancer listener (ARN) to register with
         Type: String
-        Default: arn:aws:elasticloadbalancing:eu-west-3:016973021151:listener/app/UngerwLoadBalancers/e19bac27a53080fe/8b21f4ada543ce69
 
     Path: 
         Description: The path to register with the Application Load Balancer

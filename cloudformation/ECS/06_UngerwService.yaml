@@ -25,7 +25,6 @@ Parameters:
     Listener:
         Description: The Application Load Balancer listener to register with
         Type: String
-        Default:  arn:aws:elasticloadbalancing:eu-central-1:431271371214:listener/app/base-Publi-17RIZZW74MFY3/a0155a0472e52bf0/62fb3d685a30bbe2
 
         
     ListenerPriority:
@@ -40,8 +39,7 @@ Parameters:
         
     TaskDefinitionArn: 
         Description: The task definition ARN
-        Type: String
-        Default: arn:aws:ecs:eu-central-1:431271371214:task-definition/man-ms-ordervehiclesrv:39    
+        Type: String   
         
     Path: 
         Description: The path to register with the Application Load Balancer
@@ -63,7 +61,6 @@ Resources:
             Role: !Ref ServiceRole
             DesiredCount: !Ref DesiredCount
             #TaskDefinition: "UngerwProductTD"
-            #TaskDefinition: "arn:aws:ecs:eu-west-3:016973021151:task-definition/UngerwProductTD:1"
             TaskDefinition:  !Sub '${TaskDefinitionArn}'
            
             LoadBalancers: 

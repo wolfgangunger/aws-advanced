@@ -12,7 +12,6 @@ Parameters:
         Description: Name of the Service Role for the Pipeline
         #Type:  AWS::IAM::Role
         Type: String
-        Default: CodeBuildRole-CodeBuildRole-11Y2V2AD0O6SO
         
     ParentVPCStack:
         Description: Please enter the Parent VPC Stack (do not change)
@@ -23,7 +22,6 @@ Parameters:
     CodeBuildSecurityGroup:
         Description: The VPC SecurityGroup
         Type: AWS::EC2::SecurityGroup::Id
-        #Default: UngerwSecurityGroups-ECSHostSecurityGroup-12IDIQ93BBSRW
         
     Subnets:
         Description: Choose which subnets this ECS cluster should be deployed to

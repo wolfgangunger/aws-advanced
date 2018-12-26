@@ -13,7 +13,6 @@ Parameters:
    UserPoolId:
       Description: The ID of the referenced User Pool 
       Type: String
-
       
    ClientId:
       Description: The ID of the User Pool Client App

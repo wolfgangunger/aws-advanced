@@ -1,0 +1,6 @@
+Requirements:
+
+kubectl (> 1.13)
+awscli (>1.16)
+aws-iam-authenticator
+jq

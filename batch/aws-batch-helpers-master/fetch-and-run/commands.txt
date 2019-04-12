@@ -1,0 +1,56 @@
+﻿1. build docker image:
+docker build -t awsbatch/fetch_and_run .   
+check image:
+docker images
+
+2. create ECR repo if not yet existing
+
+3. Push the image to ECR
+
+4. create a job script and upload to S3
+
+5. create an IAM role 
+Under type of trusted entity, choose AWS service then Elastic Container Service. 
+For use case, select Elastic Container Service Task, and choose Next: Permissions.
+On the Attach Policy page, type “AmazonS3ReadOnlyAccess” into the Filter field and then select the check box for that policy. 
+
+5. create Job definition
+In the AWS Batch console, choose Job Definitions, Create.
+For the Job Definition, enter a name, for example, fetch_and_run.
+For IAM Role, choose the role that you created earlier, batchJobRole.
+For ECR Repository URI, enter the URI where the fetch_and_run image was pushed, 
+for example: 012345678901.dkr.ecr.us-east-1.amazonaws.com/awsbatch/fetch_and_run.
+Leave the Command field blank.
+For vCPUs, enter 1. For Memory, enter 500.
+For User, enter “nobody”.
+Choose Create job definition.
+
+6. Submit and run the job
+In the AWS Batch console, choose Jobs, Submit Job.
+Enter a name for the job, for example: script_test.
+Choose the latest fetch_and_run job definition.
+For Job Queue, choose a queue, for example: first-run-job-queue.
+For Command, enter myjob.sh 3.
+Choose Validate Command.
+Enter the following environment variables and then choose Submit job.
+Key=BATCH_FILE_TYPE, Value=script
+Key=BATCH_FILE_S3_URL, Value=s3://los-dev-test1/myjob.sh . Don’t forget to use the correct URL for your file.
+
+7. After the job is completed, check the final status in the console.
+
+8. optional: check cloud watch logs 
+
+-------
+
+docker build -t awsbatch/fetch_and_run .  
+docker build -t awsbatch_unw .  
+
+$(aws ecr get-login --no-include-email --region eu-central-1)
+
+
+docker tag awsbatch/fetch_and_run:latest 012345678901.dkr.ecr.us-east-1.amazonaws.com/awsbatch/fetch_and_run:latest
+
+
+docker push 012345678901.dkr.ecr.us-east-1.amazonaws.com/awsbatch/fetch_and_run:latest
+
+

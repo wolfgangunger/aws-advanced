@@ -55,7 +55,7 @@ Parameters:
 
     Cluster:
         Type: String
-        Description: Name of the service where the builded artifact would be deployed
+        Description: Name of the cluster
         Default: ecs-example
 ######################################################################################
 #  Resources

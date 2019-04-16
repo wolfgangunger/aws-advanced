@@ -36,7 +36,6 @@ Parameters:
         Description: The image name of the task definition
         Type: String
         Default: 016973021151.dkr.ecr.us-west-1.amazonaws.com/ecs-example-repository:spring-boot
-        #Default: 275396840892.dkr.ecr.us-east-1.amazonaws.com/ecs-refarch-cloudformation/product-service:1.0.0
         
     ContainerPort:
         Description: The container port
@@ -99,7 +98,6 @@ Resources:
     ListenerRule:
         Type: AWS::ElasticLoadBalancingV2::ListenerRule
         Properties:
-            #ListenerArn: !Ref Listener
             ListenerArn: !ImportValue ECS-ALB-ARN
             Priority: 1
             Conditions:
@@ -158,8 +156,7 @@ Resources:
                 - - service
                   - !Ref Cluster
                   - !GetAtt Service.Name
-            #RoleARN: !Ref ECSServiceAutoScalingRoleARN
-            RoleARN: !ImportValue ECS-ALB-ARN
+            RoleARN: !ImportValue ECSServiceAutoScalingRoleARN
             ScalableDimension: ecs:service:DesiredCount
             ServiceNamespace: ecs
             

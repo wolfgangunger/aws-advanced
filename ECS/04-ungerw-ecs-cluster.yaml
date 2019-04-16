@@ -615,16 +615,22 @@ Outputs:
     Cluster:
         Description: A reference to the ECS cluster
         Value: !Ref ECSCluster
+        Export:
+            Name: ECSCluster
 
     ECSServiceAutoScalingRole:
         Description: A reference to ECS service auto scaling role
         Value: !GetAtt ECSServiceAutoScalingRole.Arn
+        Export:
+            Name: ECSServiceAutoScalingRoleARN
 
     ECSAutoScalingGroupName:
         Description: A reference to ECS AutoScaling Group Name
         Value: !Ref ECSAutoScalingGroup
+        Export:
+            Name: ECSAutoScalingGroup
     EcsRepoArn:
         Description: The just created Repository
         Value: !GetAtt ECSRepo.Arn
         Export:
-            Name: ECSRepo
+            Name: EcsRepoARN

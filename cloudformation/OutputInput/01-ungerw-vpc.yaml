@@ -1,0 +1,124 @@
+Description: >
+    VPC - no subnets, internet gateway
+#  by wolfgang unger 9.3.2018
+
+Parameters:
+
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: vpc-example
+
+    VpcCIDR: 
+        Description: Please enter the IP range (CIDR notation) for this VPC
+        Type: String
+        Default: 10.192.0.0/16
+
+
+Resources:
+    VPC: 
+        Type: AWS::EC2::VPC
+        Properties:
+            CidrBlock: !Ref VpcCIDR
+            EnableDnsHostnames: true
+            Tags: 
+                - Key: Name 
+                  Value: !Ref EnvironmentName
+            
+    InternetGateway:
+        Type: AWS::EC2::InternetGateway
+        Properties:
+            Tags:
+                - Key: Name
+                  Value: !Ref EnvironmentName
+            
+    InternetGatewayAttachment:
+        Type: AWS::EC2::VPCGatewayAttachment
+        Properties:
+            InternetGatewayId: !Ref InternetGateway
+            VpcId: !Ref VPC
+
+
+    NatGateway1EIP:
+        Type: AWS::EC2::EIP
+        DependsOn: InternetGatewayAttachment
+        Properties: 
+            Domain: vpc
+
+    NatGateway2EIP:
+        Type: AWS::EC2::EIP
+        DependsOn: InternetGatewayAttachment
+        Properties:
+            Domain: vpc
+
+    PublicRouteTable:
+        Type: AWS::EC2::RouteTable
+        Properties: 
+            VpcId: !Ref VPC
+            Tags: 
+                - Key: Name 
+                  Value: !Sub ${EnvironmentName} Public Routes
+
+    DefaultPublicRoute: 
+        Type: AWS::EC2::Route
+        DependsOn: InternetGatewayAttachment
+        Properties: 
+            RouteTableId: !Ref PublicRouteTable
+            DestinationCidrBlock: 0.0.0.0/0
+            GatewayId: !Ref InternetGateway
+
+
+    PrivateRouteTable1:
+        Type: AWS::EC2::RouteTable
+        Properties: 
+            VpcId: !Ref VPC
+            Tags: 
+                - Key: Name 
+                  Value: !Sub ${EnvironmentName} Private Routes (AZ1)
+
+
+    PrivateRouteTable2:
+        Type: AWS::EC2::RouteTable
+        Properties: 
+            VpcId: !Ref VPC
+            Tags: 
+                - Key: Name 
+                  Value: !Sub ${EnvironmentName} Private Routes (AZ2)
+
+####################################
+Outputs: 
+    VPC: 
+        Description: A reference to the created VPC
+        Value: !Ref VPC
+        Export:
+            Name: VPC
+
+    NatGateway1EIP:
+        Description: A reference to the NatGateway EIP
+        Value: !Ref NatGateway1EIP
+        Export:
+            Name: NatGateway1EIP
+
+    NatGateway1EIPAllocationId:
+        Description: A reference to tNatGateway EIP - AllocationId
+        Value: !GetAtt NatGateway1EIP.AllocationId
+        Export:
+            Name: NatGateway1EIPAllocationId
+
+    NatGateway2EIP:
+        Description: A reference to tNatGateway EIP
+        Value: !Ref NatGateway2EIP
+        Export:
+            Name: NatGateway2EIP
+
+    NatGateway2EIPAllocationId:
+        Description: A reference to tNatGateway EIP  - AllocationId
+        Value: !GetAtt NatGateway2EIP.AllocationId
+        Export:
+            Name: NatGateway2EIPAllocationId
+
+    PublicRouteTable:
+        Description: A reference to public Route table
+        Value: !Ref PublicRouteTable
+        Export:
+            Name: PublicRouteTable

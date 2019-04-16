@@ -15,7 +15,6 @@ Resources:
         Properties:
             TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-cloudformation-stacks/01-ungerw-vpc.yaml 
             Parameters:
-                #EnvironmentName:    !Ref AWS::StackName
                 EnvironmentName:    !Ref EnvironmentName
                 VpcCIDR:            10.180.0.0/16
                 PublicSubnet1CIDR:  10.180.8.0/21
@@ -28,7 +27,6 @@ Resources:
         Properties:
             TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-cloudformation-stacks/02-ungerw-security-groups.yaml 
             Parameters: 
-                #EnvironmentName: !Ref AWS::StackName
                 EnvironmentName:    !Ref EnvironmentName    
                 VPC: !GetAtt VPC.Outputs.VPC
 
@@ -37,18 +35,17 @@ Resources:
         Properties:
             TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-cloudformation-stacks/03-ungerw-load-balancers.yaml 
             Parameters:
-                #EnvironmentName: !Ref AWS::StackName
                 EnvironmentName:  !Ref EnvironmentName  
                 VPC: !GetAtt VPC.Outputs.VPC
                 Subnets: !GetAtt VPC.Outputs.PublicSubnets
                 SecurityGroup: !GetAtt SecurityGroups.Outputs.LoadBalancerSecurityGroup
 
     ECS:
+        DependsOn: "ALB"
         Type: AWS::CloudFormation::Stack
         Properties:
             TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-cloudformation-stacks/04-ungerw-ecs-cluster.yaml 
             Parameters:
-                #EnvironmentName: !Ref AWS::StackName
                 EnvironmentName:  !Ref EnvironmentName  
                 InstanceType: t2.small
                 ClusterSize: 2
@@ -56,5 +53,19 @@ Resources:
                 SecurityGroup: !GetAtt SecurityGroups.Outputs.ECSHostSecurityGroup
                 Subnets: !GetAtt VPC.Outputs.PrivateSubnets
 
+    Service:
+        DependsOn: "ECS"
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-cloudformation-stacks/08-ungerw-service-complete.yaml
+            Parameters:
+                #EnvironmentName:  !Ref EnvironmentName               
+                VPC: !GetAtt VPC.Outputs.VPC
+                DesiredCount: 2
+                Path: /spring-docker/hello
+                ServiceName: spring-boot
 
-
+Outputs:
+    ServiceUrl: 
+        Description: The URL endpoint for the service
+        Value: !Join [ "/spring-docker/", [ !GetAtt ALB.Outputs.LoadBalancerUrl, "hello" ]]

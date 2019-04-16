@@ -42,12 +42,15 @@ Resources:
                   Value: !Sub ${EnvironmentName}-LoadBalancers
 
 Outputs:
-
     ECSHostSecurityGroup: 
         Description: A reference to the security group for ECS hosts
         Value: !Ref ECSHostSecurityGroup
+        Export:
+            Name: ECSHostSecurityGroup
 
     LoadBalancerSecurityGroup:
         Description: A reference to the security group for load balancers
         Value: !Ref LoadBalancerSecurityGroup
+        Export:
+            Name: LoadBalancerSecurityGroup
 

@@ -33,25 +33,25 @@ Parameters:
 
     KMSKeyId:
         Type: String
-        Description: KMS Key ID CodePipeline artifacts on S3
+        Description: KMS Key ID CodePipeline artifacts on S3 (ARN)
         # enter your kms key in here
-        Default: arn:aws:kms:us-west-1:0....xxx:key/426f7a.....xxx
+        Default: arn:aws:kms:us-east-1:016973021151:key/58b8e197-2e58-4ce3-9ee6-15ca18378410
         
         
     ArtifactStoreS3Bucket:
         Type: String
         Description: Name of the S3 bucket to store CodePipeline artificats.
-        Default: codepipeline-ca-wolfgang
+        Default: codepipeline-nv-wolfgang
         
     NetworkStack:
         Type: String
         Description: ECS network stack name
-        Default: UngerwVPC
+        Default: ecsNV
         
     Service:
         Type: String
         Description: Ref to the service where the builded artifact would be deployed
-        Default: UngerwServiceComplete-Service-1I21NO0BAHCJY
+        Default: ecsNV-Service-105ZZOF8XXHV4-Service-1K10PMKX97URN
 
     Cluster:
         Type: String

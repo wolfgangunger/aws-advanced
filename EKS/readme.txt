@@ -16,33 +16,39 @@ choco install jdk8 -params 'installdir=c:\\java8'
 --steps---
 Create a Docker repository using ECR
 aws ecr create-repository --region=eu-west-1 --repository-name ungerw
----
-create cluster:
+
+---create cluster:
 eksctl create cluster --name=ungerw --nodes=3 --node-type=m5.large --region eu-west-1
 eksctl create cluster --name=ungerw --nodes-min=3 --nodes-max=5 --region eu-west-1
 
----
-Once you have created a cluster, you will find that cluster credentials were added in ~/.kube/config
----
-Check the cluster:
+
+----Check the cluster:
 kubectl get nodes
 kubectl get clusterroles
 
-aws-iam-authenticator token -i ungerw
-
-Generate ~/.kube/config if you haven't created the cluster.
-If you haven't created the cluster you'll need a ~/.kube/config file containing the credentials to be able to communicate with the cluster. 
-
+--update--
 aws eks update-kubeconfig --name=ungerw --region=eu-west-1
 ---
 Show the list of kubernetes contexts and select one:
 kubectl config get-contexts
-kubectl config use-context <context-name>
+kubectl config use-context ungerw
 --
 Create a namespace and switch to it:
 kubectl create namespace ungerw
-kubectl config set-context $(kubectl config current-context) --namespace=<NAMESPACE NAME>
 kubectl config set-context $(kubectl config current-context) --namespace=ungerw
+
+---install dashboard----------
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
+
+kubectl proxy --port=8080 --address='0.0.0.0' --disable-filter=true &
+
+get token:
+aws-iam-authenticator token -i ungerw
+aws-iam-authenticator token -i ungerw --token-only
+
+open in browser:
+http://localhost:8080/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/.
+
 ---------------
 Java / Spring Part
 
@@ -60,12 +66,20 @@ docker push 016973021151.dkr.ecr.eu-west-1.amazonaws.com/ungerw:spring-boot
 
 --- Deployment of Service: 
 kubectl create -f k8s/deployment.yaml
+kubectl create -f k8s/deployment-elb.yaml
 
 kubectl get pods
 kubectl describe pod spring-boot
 kubectl logs -f spring-boot
 get IP:
 kubectl get svc
+
+---get URL ---
+kubectl get service spring-boot
+kubectl get service spring-boot -o wide
+kubectl get service spring-boot-elb
+kubectl get service spring-boot-elb -o wide
+http://abfc98d05683c11e9996f0a6f13019ea-1104569167.eu-west-1.elb.amazonaws.com/spring-docker/hello
 
 ------helm---------
 https://helm.sh/docs/using_helm/#installing-helm
@@ -82,12 +96,13 @@ Create the Helm Chart:
 cd helm
 helm create spring-boot
 
-helm install --name spring-boot spring-boot
+helm install --name spring-boot-helm spring-boot
+
+kubectl get svc spring-boot -o jsonpath="{.status.loadBalancer.ingress[*].hostname}"; echo
 
 ---tiller
 https://github.com/helm/helm/blob/master/docs/quickstart.md
 https://raw.githubusercontent.com/helm/helm/master/docs/rbac.md
-
 
 helm init --service-account tiller --history-max 200
 
@@ -100,8 +115,6 @@ kubectl get ingresses.extensions --all-namespaces
 kubectl delete ingresses.extensions-n <namespace> <ing-anme>
 kubectl delete ingresses.extensions -n ungerw spring-boot
 
-kubectl get ingress.voyager.appscode.com --all-namespaces
-kubectl delete ingress.voyager.appscode.com -n <namespace> <ing-anme>
 
 Delete the EKS cluster using eksctl:
 eksctl delete cluster --name=ungerw

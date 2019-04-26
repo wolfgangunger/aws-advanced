@@ -14,7 +14,7 @@ spec:
       - containerPort: 8080
     livenessProbe:
       httpGet:
-        path: /
+        path: /spring-docker/hello
         port: 8080
       initialDelaySeconds: 300
     readinessProbe:

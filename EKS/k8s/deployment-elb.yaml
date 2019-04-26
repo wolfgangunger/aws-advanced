@@ -1,15 +1,15 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: spring-boot
+  name: spring-boot-elb
   labels:
-    name: spring-boot
+    name: spring-boot-elb
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: spring-boot
+        app: spring-boot-elb
     spec:
       containers:
       - name: spring-boot

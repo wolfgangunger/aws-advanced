@@ -1,0 +1,36 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: micro-hackandlearn
+  labels:
+    name: micro-hackandlearn
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: micro-hackandlearn
+    spec:
+      containers:
+      - name: micro-hackandlearn
+        image: 016973021151.dkr.ecr.eu-west-1.amazonaws.com/hackandlearn/micro:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: "http"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: micro-hackandlearn
+  labels: 
+    app: micro-hackandlearn
+spec:
+  selector:
+    app: micro-hackandlearn
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  type: LoadBalancer

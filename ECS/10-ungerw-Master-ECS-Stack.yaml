@@ -1,6 +1,6 @@
 Description: >
     ECS example , vpc, infrastructure, ecs-cluster
-#  by wolfgang unger 9.3.2018 - based on official amazon infrastructure stacks
+#  by wolfgang unger 9.3.2018 
 
 Parameters:
     EnvironmentName:

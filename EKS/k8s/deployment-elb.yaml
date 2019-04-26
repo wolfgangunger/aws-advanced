@@ -1,0 +1,36 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: spring-boot
+  labels:
+    name: spring-boot
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: spring-boot
+    spec:
+      containers:
+      - name: spring-boot
+        image: 016973021151.dkr.ecr.eu-west-1.amazonaws.com/ungerw:spring-boot
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: "http"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: spring-boot-elb
+  labels: 
+    app: spring-boot-elb
+spec:
+  selector:
+    app: spring-boot-elb
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  type: LoadBalancer

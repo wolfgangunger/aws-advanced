@@ -1,0 +1,64 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: micro-nginx-ingress
+  labels:
+    name: micro-nginx-ingress
+    app: micro-nginx-ingress
+spec:
+  containers:
+  - name: micro-nginx-ingress
+    image: 016973021151.dkr.ecr.us-west-2.amazonaws.com/dkrasimir/micro:latest
+    imagePullPolicy: IfNotPresent
+    ports:
+      - containerPort: 8080
+    livenessProbe:
+      httpGet:
+        path: /
+        port: 8080
+      initialDelaySeconds: 300
+    readinessProbe:
+      httpGet:
+        path: /micro-sample/rs/monitoring/ping
+        port: 8080
+      initialDelaySeconds: 300
+    resources:
+          limits:
+            cpu: 800m
+            memory: 1Gi
+          requests:
+            cpu: 800m
+            memory: 1Gi
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: micro-nginx-ingress
+  labels: 
+    app: micro-nginx-ingress
+spec:
+  selector:
+    app: micro-nginx-ingress
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: micro-nginx-ingress
+  labels: 
+    app: micro-nginx-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+  - host: tech-talk-ntt.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: micro-nginx-ingress
+          servicePort: 80

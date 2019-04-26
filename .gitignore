@@ -14,3 +14,6 @@
 /ECS-Fargate/template
 /ECS-Fargate/ECS
 /EKS/README.md
+/EKS/k8s/deployment-elb-hackandlearn.yaml
+/EKS/k8s/deployment-elb-dockerhub.yaml
+/EKS/istio/micro-gateway.yaml

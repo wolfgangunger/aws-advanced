@@ -1,0 +1,53 @@
+Description: >
+    ECS Fargate example , vpc, infrastructure, ecs-cluster
+#  by wolfgang unger 9.3.2018 
+
+Parameters:
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: fargate-example
+
+
+Resources:
+    VPC:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-cloudformation-stacks/01-ungerw-fargate-public-private-vpc.yml 
+            Parameters:
+                EnvironmentName: !Ref EnvironmentName
+                
+    ALB:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-cloudformation-stacks/03-ungerw-fargate-loadBalancer.yml 
+            Parameters:
+                EnvironmentName:  !Ref EnvironmentName  
+                VPC: !GetAtt VPC.Outputs.VPC
+                PublicSubnetOne: !GetAtt VPC.Outputs.PublicSubnetOne
+                PublicSubnetTwo: !GetAtt VPC.Outputs.PublicSubnetTwo
+                PrivateSubnetOne: !GetAtt VPC.Outputs.PrivateSubnetOne
+                PrivateSubnetTwo: !GetAtt VPC.Outputs.PrivateSubnetTwo
+
+    ECS:
+        DependsOn: "ALB"
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-cloudformation-stacks/04-ungerw-fargate-ECS-Cluster.yml 
+            Parameters:
+                EnvironmentName:  !Ref EnvironmentName  
+                VPC: !GetAtt VPC.Outputs.VPC
+                PrivateLoadBalancerSG: !GetAtt ALB.Outputs.PrivateLoadBalancerSG 
+                PublicLoadBalancerSG: !GetAtt ALB.Outputs.PublicLoadBalancerSG
+                FargateContainerSecurityGroup: !GetAtt ALB.Outputs.FargateContainerSecurityGroup
+
+
+    Service:
+        DependsOn: "ECS"
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-cloudformation-stacks/05-ungerw-fargate-spring-boot.yml
+            Parameters:
+                EnvironmentName:  !Ref EnvironmentName     
+                ClusterName:  !GetAtt ECS.Outputs.ClusterName         
+              

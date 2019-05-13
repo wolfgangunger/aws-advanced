@@ -1,18 +1,29 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: AWS Fargate Service in private subnet, but accessible via a public load balancer.
 Parameters:
+
+  EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: fargate-example
+
   StackName:
     Type: String
-    Default: Fargate-VPC
+    Default: fargate-service
     Description: The name of the parent Fargate networking stack that you created. Necessary
                  to locate and reference resources created by that stack.
+
+  ClusterName:
+    Type: String
+    Description: A name of the cluster
+
   ServiceName:
     Type: String
     Default: SpringBoot
     Description: A name for the service
   ImageUrl:
     Type: String
-    Default: 016973021151.dkr.ecr.ca-central-1.amazonaws.com/ecs-repository:ungerw-springboot-docker_latest
+    Default: 016973021151.dkr.ecr.us-west-1.amazonaws.com/ecs-example-repository:spring-boot
     Description: The url of a docker image 
     
   ContainerPort:
@@ -71,7 +82,7 @@ Resources:
         - FARGATE
       ExecutionRoleArn:
         Fn::ImportValue:
-          !Join [':', [!Ref 'StackName', 'ECSTaskExecutionRole']]
+          !Join [':', [!Ref 'EnvironmentName', 'ECSTaskExecutionRole']]
       TaskRoleArn:
         Fn::If:
           - 'HasCustomRole'
@@ -93,9 +104,10 @@ Resources:
     DependsOn: LoadBalancerRule
     Properties:
       ServiceName: !Ref 'ServiceName'
-      Cluster:
+      #Cluster: !Ref: ClusterName
+      Cluster: 
         Fn::ImportValue:
-          !Join [':', [!Ref 'StackName', 'ClusterName']]
+          !Join [':', [!Ref 'EnvironmentName', 'ClusterName']]
       LaunchType: FARGATE
       DeploymentConfiguration:
         MaximumPercent: 200
@@ -105,12 +117,12 @@ Resources:
         AwsvpcConfiguration:
           SecurityGroups:
             - Fn::ImportValue:
-                !Join [':', [!Ref 'StackName', 'FargateContainerSecurityGroup']]
+                !Join [':', [!Ref 'EnvironmentName', 'FargateContainerSecurityGroup']]
           Subnets:
             - Fn::ImportValue:
-                !Join [':', [!Ref 'StackName', 'PrivateSubnetOne']]
+                !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetOne']]
             - Fn::ImportValue:
-                !Join [':', [!Ref 'StackName', 'PrivateSubnetTwo']]
+                !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetTwo']]
       TaskDefinition: !Ref 'TaskDefinition'
       LoadBalancers:
         - ContainerName: !Ref 'ServiceName'
@@ -133,7 +145,7 @@ Resources:
       UnhealthyThresholdCount: 2
       VpcId:
         Fn::ImportValue:
-          !Join [':', [!Ref 'StackName', 'VPCId']]
+          !Join [':', [!Ref 'EnvironmentName', 'VPCId']]
 
   # Create a rule on the load balancer for routing traffic to the target group
   LoadBalancerRule:
@@ -147,7 +159,7 @@ Resources:
           Values: [!Ref 'Path']
       ListenerArn:
         Fn::ImportValue:
-          !Join [':', [!Ref 'StackName', 'PublicListener']]
+          !Join [':', [!Ref 'EnvironmentName', 'PublicListener']]
       Priority: !Ref 'Priority'
 
 
@@ -157,5 +169,6 @@ Outputs:
         Description: The URL endpoint for the service
         Value: !Join
           - ''
-          -  - !ImportValue Fargate-VPC:ExternalUrl
+          -  - Fn::ImportValue:
+                 !Join [':', [!Ref 'EnvironmentName', 'ExternalUrl']]
              - !Ref HealthCheckPath

@@ -40,6 +40,5 @@ Resources:
                 PrivateLoadBalancerSG: !GetAtt ALB.Outputs.PrivateLoadBalancerSG 
                 PublicLoadBalancerSG: !GetAtt ALB.Outputs.PublicLoadBalancerSG
                 FargateContainerSecurityGroup: !GetAtt ALB.Outputs.FargateContainerSecurityGroup
-
-
+ 
               

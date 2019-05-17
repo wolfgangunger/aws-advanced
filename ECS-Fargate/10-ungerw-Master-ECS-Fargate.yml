@@ -46,7 +46,8 @@ Resources:
         DependsOn: "ECS"
         Type: AWS::CloudFormation::Stack
         Properties:
-            TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-cloudformation-stacks/05-ungerw-fargate-spring-boot.yml
+            #TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-cloudformation-stacks/05-ungerw-fargate-spring-boot.yml
+            TemplateURL: https://s3.eu-central-1.amazonaws.com/ungerw-cloudformation-stacks/05-ungerw-fargate-spring-boot-scaled.yml
             Parameters:
                 EnvironmentName:  !Ref EnvironmentName     
                 ClusterName:  !GetAtt ECS.Outputs.ClusterName         

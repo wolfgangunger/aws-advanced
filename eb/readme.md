@@ -1,18 +1,25 @@
 ## create Elastic Beanstalk environment
 
-#create the sample app
+#   create the sample app
 eb init
-#create a simple index file
+
+# create a simple index file
 echo "Hello AWS Friends" > index.html
-#create the env
+
+# create the env
 eb create int-env
-#deploy the env
+
+# deploy the env
 eb deploy
-#open the app in browser
+
+# open the app in browser
 eb open
-#see the status
+
+# see the status
 eb status
-#check health
+
+# check health
 eb health
-#cleanup
+
+# cleanup
 eb terminate

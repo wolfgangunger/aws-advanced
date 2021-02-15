@@ -13,6 +13,8 @@ Resources:
         Description: Test with Cloud Formation
         FunctionName: HelloWorldPyByCF
         Handler: index.lambda_handler
-        Role: arn:aws:iam::016973021151:role/service-role/LambdaRole
+        #Role: arn:aws:iam::016973021151:role/service-role/LambdaRole
+        Role: arn:aws:iam::563703158576:role/LambdaRole
+        
         Runtime: python2.7
 

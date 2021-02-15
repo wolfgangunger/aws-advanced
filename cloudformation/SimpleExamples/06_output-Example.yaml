@@ -63,7 +63,7 @@ Resources:
     Properties:
       # select image id in map
       ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
-      InstanceType: m1.small
+      InstanceType: t2.micro
       KeyName: !Ref KeyPairName
       SubnetId: !Ref Subnet
       SecurityGroupIds:
@@ -79,5 +79,6 @@ Outputs:
   InstanceName:
     Description: 'Instance name'
     Value: !Ref MyInstance
-
+    Export:
+       Name: MyInstance
  

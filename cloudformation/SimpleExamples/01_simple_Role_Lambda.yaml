@@ -1,0 +1,28 @@
+
+Description: >
+    Role Resource example
+#  by wolfgang unger 9.12.2018
+
+Resources:
+  LambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+        RoleName: LambdaRole    
+        Path: "/"    
+        AssumeRolePolicyDocument: 
+          Version: "2012-10-17"
+          Statement: 
+            - 
+              Effect: "Allow"
+              Principal: 
+                Service: 
+                  - "lambda.amazonaws.com"
+              Action: 
+                  - "sts:AssumeRole" 
+        ManagedPolicyArns:
+            - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+
+
+
+
+

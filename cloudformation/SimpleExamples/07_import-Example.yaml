@@ -1,0 +1,25 @@
+---
+## ungerw 9.3.2018
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Output Example - EC2 with ImageId by Region and Output'
+
+Parameters:
+
+    EFSName:
+        Description: Name of the EFS Filesystem
+        Type: String
+    
+
+Resources:      
+ 
+  MasterStorage:
+    Type: 'AWS::EFS::FileSystem'
+    Properties:
+      FileSystemTags:
+      - Key: Name
+        Value: !Ref EFSName
+      - Key: EC2-Instance
+        Value:  
+           Fn::ImportValue: MyInstance   
+      PerformanceMode: generalPurpose
+ 

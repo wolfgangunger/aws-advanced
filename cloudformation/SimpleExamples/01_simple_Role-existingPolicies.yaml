@@ -20,7 +20,7 @@ Resources:
               Action: 
                   - "sts:AssumeRole"
         ManagedPolicyArns:
-            - arn:aws:iam::906781655012:policy/customer/ecs-service
+            - arn:aws:iam::aws:policy/AmazonECS_FullAccess
 
 
 

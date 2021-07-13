@@ -80,5 +80,5 @@ Outputs:
     Description: 'Instance name'
     Value: !Ref MyInstance
     Export:
-       Name: MyInstance
+       Name: wu-MyInstance
  

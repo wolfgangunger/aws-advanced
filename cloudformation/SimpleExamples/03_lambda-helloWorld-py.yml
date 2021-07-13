@@ -11,10 +11,10 @@ Resources:
                 def lambda_handler(event, context):
                 return 'Hello from Lambda'
         Description: Test with Cloud Formation
-        FunctionName: HelloWorldPyByCF
+        FunctionName: wu-HelloWorldPyByCF
         Handler: index.lambda_handler
         #Role: arn:aws:iam::016973021151:role/service-role/LambdaRole
-        Role: arn:aws:iam::563703158576:role/LambdaRole
+        Role: arn:aws:iam::563703158576:role/wur-LambdaRole
         
         Runtime: python2.7
 

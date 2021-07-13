@@ -11,3 +11,4 @@ Resources:
       # eu-central-1
       ImageId: ami-030aae8cba933aede
       InstanceType: t2.micro
+

@@ -267,8 +267,8 @@ Resources:
   CPUScaleInAlarm:
         Type: AWS::CloudWatch::Alarm
         Properties:
-            AlarmName: CPU utilization less than 70%
-            AlarmDescription: Alarm if cpu utilization greater than 70% of reserved cpu
+            AlarmName: CPU utilization less than 30%
+            AlarmDescription: Alarm if cpu utilization greater than 30% of reserved cpu
             Namespace: AWS/ECS
             MetricName: CPUUtilization
             Dimensions:
@@ -279,7 +279,7 @@ Resources:
             Statistic: Maximum
             Period: '60'
             EvaluationPeriods: '10'
-            Threshold: '70'
+            Threshold: '30'
             ComparisonOperator: LessThanThreshold
             AlarmActions:
             - !Ref ServiceScaleInPolicy

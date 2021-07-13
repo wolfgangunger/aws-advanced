@@ -7,7 +7,7 @@ Resources:
   JenkinsRole:
     Type: 'AWS::IAM::Role'
     Properties:
-        RoleName: JenkinsRole    
+        RoleName: wu-JenkinsRole    
         Path: "/"    
         AssumeRolePolicyDocument: 
           Version: "2012-10-17"
@@ -20,7 +20,7 @@ Resources:
               Action: 
                   - "sts:AssumeRole" 
         Policies:
-            - PolicyName: AmazonSSMFullAccess
+            - PolicyName: wu-AmazonSSMFullAccess
               PolicyDocument:
                 Version: '2012-10-17'
                 Statement:

@@ -20,6 +20,6 @@ Resources:
         Value: !Ref EFSName
       - Key: EC2-Instance
         Value:  
-           Fn::ImportValue: MyInstance   
+           Fn::ImportValue: wu-MyInstance
       PerformanceMode: generalPurpose
  

@@ -7,7 +7,7 @@ Resources:
   LambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
-        RoleName: LambdaRole    
+        RoleName: wur-LambdaRole    
         Path: "/"    
         AssumeRolePolicyDocument: 
           Version: "2012-10-17"
